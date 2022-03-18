@@ -1,0 +1,150 @@
+---
+title: "Ukraine War: Russian Losses"
+author: "Cormac Nolan"
+date: "3/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(forecast)
+```
+
+## Import
+
+```{r cars}
+russian_losses <- tibble::tribble(
+  ~report_date, ~soldiers, ~planes, ~helicopters, ~tanks,  ~artillery_pieces,  
+  ~armoured_personell_carriers, ~mlrs, ~boats, ~vehicles, ~fuel_tankers, ~uav, ~aa_systems,
+  "2022-02-23", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  "2022-02-26", 3500, 14, 8, 102, 15, 536, 1, 0, 0, 0, 0, 0,
+  "2022-02-28", 3500, 29, 29, 191, 74, 816, 22, 0, 291, 60, 3, 5,
+  "2022-03-01", 5710, 29, 29, 198, 77, 846, 24, 2, 305, 60, 3, 7,
+  "2022-03-02", 5840, 30, 31, 211, 85, 862, 40, 2, 355, 60, 3, 9,
+  "2022-03-06", 11000, 44, 48, 285, 109, 985, 50, 2, 447, 60, 4, 21,
+  "2022-03-07", 11000, 46, 68, 290, 117, 999, 50, 2, 454, 60, 7, 23,
+  "2022-03-08", 12000, 48, 80, 303, 120, 1036, 56, 2, 474, 60, 7, 27,
+  "2022-03-10", 12000, 49, 81, 335, 123, 1105, 56, 2, 526, 60, 7, 29,
+  "2022-03-11", 12000, 57, 83, 353, 125, 1165, 58, 2, 558, 60, 7, 31,
+  "2022-03-16", 13800, 84, 108, 430, 190, 1375, 70, 2, 819, 60, 11, 43,
+  "2022-03-17", 14000, 86, 108, 444, 201, 1435, 72, 2, 864, 60, 11, 43,
+  ) %>% 
+  mutate(report_date = as.Date(report_date))
+
+campaign_length = as.integer(max(russian_losses$report_date) - min(russian_losses$report_date))
+campaign_length_weeks = ceiling(campaign_length / 7)
+
+russian_losses
+ 
+```
+
+## Exploration
+
+```{r pressure, echo=FALSE}
+ 
+russian_losses %>% 
+  filter(report_date == as.character(max(russian_losses$report_date))) %>% 
+  select(-report_date) %>% 
+  purrr::map_df(.f=function(x) x / campaign_length)
+```
+
+```{r, fig.height=7}
+russian_losses %>% 
+  select(report_date, tanks, artillery_pieces, armoured_personell_carriers, vehicles) %>% 
+  tidyr::pivot_longer(cols = where(~is.numeric(.x)), names_to="loss_type", values_to="loss_value") %>% 
+  ggplot(aes(report_date, loss_value, group=loss_type, colour=loss_type)) +
+  geom_line() +
+  facet_wrap(~loss_type, ncol = 2)
+
+```
+
+
+```{r, fig.height=7}
+russian_losses %>% 
+  select(report_date, soldiers, armoured_personell_carriers, vehicles) %>% 
+  tidyr::pivot_longer(cols = where(~is.numeric(.x)), names_to="loss_type", values_to="loss_value") %>% 
+  ggplot(aes(report_date, loss_value, group=loss_type, colour=loss_type)) +
+  geom_line() +
+  facet_wrap(~loss_type, ncol = 3)
+
+```
+
+```{r, fig.height=7}
+russian_losses %>% 
+  select(report_date, planes, helicopters, artillery_pieces, mlrs, aa_systems) %>% 
+  tidyr::pivot_longer(cols = where(~is.numeric(.x)), names_to="loss_type", values_to="loss_value") %>% 
+  ggplot(aes(report_date, loss_value, group=loss_type, colour=loss_type)) +
+  geom_line() +
+  facet_wrap(~loss_type, ncol = 2)
+
+```
+
+
+
+## Rates
+
+First we need to apply interpolation, linear is fine for now.
+
+```{r, fig.height=7}
+
+russian_losses_all_dates <-
+  dplyr::tibble(report_date = min(russian_losses$report_date) + 0:campaign_length) %>%
+  left_join(russian_losses, by="report_date")
+
+
+russian_losses_all_dates
+```
+
+
+```{r, fig.height=7}
+russian_losses_all_dates <- 
+  russian_losses_all_dates %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=forecast::na.interp)) %>%
+  mutate(across(where(~is.numeric(.x)), .fns=as.numeric)) %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=round))
+
+russian_losses_all_dates
+```
+
+```{r}
+russian_losses_all_dates <- 
+  russian_losses_all_dates %>% 
+  mutate(campaign_week_number = c(0, rep(1:campaign_length_weeks, each=7)[1:(campaign_length)]))
+  
+russian_losses_all_dates
+```
+
+```{r}
+russian_losses_all_dates %>% 
+  pull(soldiers) %>% 
+  forecast::ma(order=2)
+  
+
+```
+
+```{r}
+russian_losses_all_dates %>% 
+  mutate(soldiers_lag = dplyr::lag(soldiers)) %>% 
+  select(report_date, soldiers, soldiers_lag)
+
+
+russian_losses_all_dates %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=stats::lag))
+  
+
+```
+
+```{r, fig.height=7}
+russian_losses_all_dates %>% 
+  select(report_date, tanks, artillery_pieces, armoured_personell_carriers, vehicles) %>% 
+  tidyr::pivot_longer(cols = where(~is.numeric(.x)), names_to="loss_type", values_to="loss_value") %>% 
+  ggplot(aes(report_date, loss_value, group=loss_type, colour=loss_type)) +
+  geom_line() +
+  facet_wrap(~loss_type, ncol = 2)
+```
+
+
+
+
