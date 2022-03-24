@@ -121,10 +121,6 @@ russian_losses_all_dates
 
 
 ```{r}
-russian_losses_all_dates %>% 
-  mutate(soldiers_lag = dplyr::lag(soldiers)) %>% 
-  select(report_date, soldiers, soldiers_lag)
-
 daily_diff <- function(val){
   val - dplyr::lag(val) 
 }
@@ -159,9 +155,22 @@ rate_plot(russian_losses_all_dates, armoured_personell_carriers)
 ```
 
 ```{r, fig.height=7}
+rate_plot(russian_losses_all_dates, artillery_pieces)
 
 ```
 
+```{r, fig.height=7}
+rate_plot(russian_losses_all_dates, planes)
 
+```
 
+```{r, fig.height=7}
+rate_plot(russian_losses_all_dates, uav)
+
+```
+
+```{r, fig.height=7}
+rate_plot(russian_losses_all_dates, helicopters)
+
+```
 
