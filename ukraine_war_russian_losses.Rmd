@@ -32,6 +32,7 @@ russian_losses <- tibble::tribble(
   "2022-03-17", 14000, 86, 108, 444, 201, 1435, 72, 2, 864, 60, 11, 43,
   "2022-03-18", 14200, 93, 112, 450, 205, 1448, 72, 3, 879, 60, 12, 43,
   "2022-03-19", 14400, 95, 115, 466, 213, 1470, 72, 3, 914, 60, 17, 44,
+  "2022-03-24", 15800, 108, 124, 530, 280, 1597, 82, 4, 1033, 72, 50, 47,
   ) %>% 
   mutate(report_date = as.Date(report_date))
 
@@ -128,48 +129,37 @@ daily_diff <- function(val){
   val - dplyr::lag(val) 
 }
 
+rate_plot <- function(df, loss_column){
+  
+  df %>% 
+    select(report_date, {{loss_column}}, campaign_week_number) %>% 
+    mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
+    tidyr::drop_na() %>% 
+    ggplot(aes(report_date, {{loss_column}})) +
+    geom_smooth(se=FALSE, span=0.5) +
+    geom_bar(stat = "identity", alpha = 0.3)
+}
 
-russian_losses_all_dates %>% 
-  select(report_date, soldiers, campaign_week_number) %>% 
-  mutate(across(where(~is.numeric(.x)), .fns=daily_diff, .names = "{.col}_{.fn}")) %>% 
-  select(-campaign_week_number_1) %>% 
-  ggplot(aes(report_date, soldiers_1)) +
-  geom_smooth(se=FALSE, span=2) +
-  geom_bar(stat = "identity", alpha = 0.3)
+
+rate_plot(russian_losses_all_dates, soldiers)
   
 
 ```
 
 ```{r}
 
-russian_losses_all_dates %>% 
-  select(report_date, vehicles, campaign_week_number) %>% 
-  mutate(across(where(~is.numeric(.x)), .fns=daily_diff, .names = "{.col}_{.fn}")) %>% 
-  select(-campaign_week_number_1) %>% 
-  ggplot(aes(report_date, vehicles_1)) +
-  geom_smooth(se=FALSE, span=2) +
-  geom_bar(stat = "identity", alpha = 0.3)
+rate_plot(russian_losses_all_dates, vehicles)
 
 ```
 
 ```{r}
-russian_losses_all_dates %>% 
-  select(report_date, armoured_personell_carriers, campaign_week_number) %>% 
-  mutate(across(where(~is.numeric(.x)), .fns=daily_diff, .names = "{.col}_{.fn}")) %>% 
-  select(-campaign_week_number_1) %>% 
-  ggplot(aes(report_date, armoured_personell_carriers_1)) +
-  geom_smooth(se=FALSE, span=0.5) +
-  geom_bar(stat = "identity", alpha = 0.3)
+
+rate_plot(russian_losses_all_dates, armoured_personell_carriers)
 
 ```
 
 ```{r, fig.height=7}
-russian_losses_all_dates %>% 
-  select(report_date, tanks, artillery_pieces, armoured_personell_carriers, vehicles) %>% 
-  tidyr::pivot_longer(cols = where(~is.numeric(.x)), names_to="loss_type", values_to="loss_value") %>% 
-  ggplot(aes(report_date, loss_value, group=loss_type, colour=loss_type)) +
-  geom_line() +
-  facet_wrap(~loss_type, ncol = 2)
+
 ```
 
 
