@@ -33,6 +33,11 @@ russian_losses <- tibble::tribble(
   "2022-03-18", 14200, 93, 112, 450, 205, 1448, 72, 3, 879, 60, 12, 43,
   "2022-03-19", 14400, 95, 115, 466, 213, 1470, 72, 3, 914, 60, 17, 44,
   "2022-03-24", 15800, 108, 124, 530, 280, 1597, 82, 4, 1033, 72, 50, 47,
+  "2022-03-25", 16100, 115, 125, 561, 291, 1625, 90, 5, 1089, 72, 53, 50,
+  "2022-03-26", 16400, 117, 127, 575, 293, 1640, 91, 7, 1131, 73, 56, 51,
+  "2022-03-27", 16600, 121, 127, 582, 294, 1664, 93, 7, 1144, 73, 56, 52,
+  "2022-03-28", 17000, 123, 127, 586, 302, 1694, 95, 7, 1150, 73, 66, 54,
+  "2022-03-29", 17200, 127, 129, 597, 303, 1710, 96, 7, 1178, 73, 71, 54,
   ) %>% 
   mutate(report_date = as.Date(report_date))
 
@@ -126,6 +131,7 @@ daily_diff <- function(val){
 }
 
 rate_plot <- function(df, loss_column){
+  .loss_column = enquo(loss_column)
   
   df %>% 
     select(report_date, {{loss_column}}, campaign_week_number) %>% 
@@ -133,7 +139,8 @@ rate_plot <- function(df, loss_column){
     tidyr::drop_na() %>% 
     ggplot(aes(report_date, {{loss_column}})) +
     geom_smooth(se=FALSE, span=0.5) +
-    geom_bar(stat = "identity", alpha = 0.3)
+    geom_bar(stat = "identity", alpha = 0.3) +
+    labs(title = quo_name(.loss_column))
 }
 
 
@@ -142,9 +149,17 @@ rate_plot(russian_losses_all_dates, soldiers)
 
 ```
 
+
 ```{r}
 
 rate_plot(russian_losses_all_dates, vehicles)
+
+```
+
+
+```{r}
+
+rate_plot(russian_losses_all_dates, tanks)
 
 ```
 
