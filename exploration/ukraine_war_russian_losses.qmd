@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
 library(forecast)
+library(fable)
+library(tsibble)
 ```
 
 ## Import
@@ -38,6 +40,27 @@ russian_losses <- tibble::tribble(
   "2022-03-27", 16600, 121, 127, 582, 294, 1664, 93, 7, 1144, 73, 56, 52,
   "2022-03-28", 17000, 123, 127, 586, 302, 1694, 95, 7, 1150, 73, 66, 54,
   "2022-03-29", 17200, 127, 129, 597, 303, 1710, 96, 7, 1178, 73, 71, 54,
+  "2022-03-30", 17300, 131, 131, 605, 305, 1723, 96, 7, 1184, 75, 81, 54,
+  "2022-04-02", 17800, 143, 134, 631, 317, 1776, 100, 7, 1236, 76, 87, 54,
+  "2022-04-04", 18300, 147, 134, 647, 330, 1844, 107, 7, 1273, 76, 92, 54,
+  "2022-04-06", 18600, 150, 135, 684, 332, 1861, 107, 7, 1324, 76, 96, 55,
+  "2022-04-08", 19000, 150, 135, 700, 333, 1891, 108, 7, 1361, 76, 112, 55,
+  "2022-04-10", 19300, 152, 137, 722, 342, 1911, 108, 7, 1384, 76, 112, 55,
+  "2022-04-12", 19600, 157, 140, 732, 349, 1946, 111, 7, 1406, 76, 124, 63,
+  "2022-04-13", 19800, 158, 143, 739, 358, 1964, 116, 7, 1429, 76, 132, 64,
+  "2022-04-16", 20100, 163, 145, 762, 371, 1982, 125, 8, 1458, 76, 138, 66,
+  "2022-04-17", 20300, 165, 146, 773, 376, 2002, 127, 8, 1471, 76, 148, 66,
+  "2022-04-18", 20600, 167, 147, 790, 381, 2041, 130, 8, 1487, 76, 155, 67,
+  "2022-04-19", 20800, 169, 150, 802, 386, 2063, 132, 8, 1495, 76, 158, 67,
+  "2022-04-20", 20900, 171, 150, 815, 391, 2087, 136, 8, 1504, 76, 165, 67,
+  "2022-04-21", 21000, 172, 151, 829, 393, 2118, 136, 8, 1508, 76, 166, 67,
+  "2022-04-22", 21200, 176, 152, 838, 397, 2162, 138, 8, 1523, 76, 172, 67,
+  "2022-04-23", 21600, 177, 154, 854, 403, 2200, 143, 8, 1543, 76, 182, 69,
+  "2022-04-24", 21800, 179, 154, 873, 408, 2238, 147, 8, 1557, 76, 191, 69,
+  "2022-04-25", 21900, 181, 154, 884, 411, 2258, 149, 8, 1566, 76, 201, 69,
+  "2022-04-26", 22100, 184, 154, 918, 416, 2308, 149, 8, 1643, 76, 205, 69,
+  "2022-04-27", 22300, 185, 155, 939, 421, 2342, 149, 8, 1666, 76, 207, 71,
+  "2022-04-28", 22800, 187, 155, 970, 431, 2389, 151, 8, 1688, 76, 215, 72,
   ) %>% 
   mutate(report_date = as.Date(report_date))
 
@@ -68,7 +91,6 @@ russian_losses %>%
 
 ```
 
-
 ```{r, fig.height=7}
 russian_losses %>% 
   select(report_date, soldiers, armoured_personell_carriers, vehicles) %>% 
@@ -89,8 +111,6 @@ russian_losses %>%
 
 ```
 
-
-
 ## Rates
 
 First we need to apply interpolation, linear is fine for now.
@@ -104,7 +124,6 @@ russian_losses_all_dates <-
 
 russian_losses_all_dates
 ```
-
 
 ```{r, fig.height=7}
 russian_losses_all_dates <- 
@@ -124,7 +143,6 @@ russian_losses_all_dates <-
 russian_losses_all_dates
 ```
 
-
 ```{r}
 daily_diff <- function(val){
   val - dplyr::lag(val) 
@@ -133,6 +151,11 @@ daily_diff <- function(val){
 rate_plot <- function(df, loss_column){
   .loss_column = enquo(loss_column)
   
+  formatted_title <- .loss_column %>% 
+    quo_name() %>% 
+    stringr::str_replace_all("_", " ") %>% 
+    stringr::str_to_title()
+    
   df %>% 
     select(report_date, {{loss_column}}, campaign_week_number) %>% 
     mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
@@ -140,7 +163,10 @@ rate_plot <- function(df, loss_column){
     ggplot(aes(report_date, {{loss_column}})) +
     geom_smooth(se=FALSE, span=0.5) +
     geom_bar(stat = "identity", alpha = 0.3) +
-    labs(title = quo_name(.loss_column))
+    labs(
+      title = formatted_title, 
+      x = "Date",
+      y="Loss Rate")
 }
 
 
@@ -149,13 +175,11 @@ rate_plot(russian_losses_all_dates, soldiers)
 
 ```
 
-
 ```{r}
 
 rate_plot(russian_losses_all_dates, vehicles)
 
 ```
-
 
 ```{r}
 
@@ -189,3 +213,45 @@ rate_plot(russian_losses_all_dates, helicopters)
 
 ```
 
+## Seasonal Decomposition to Check for Report Effects
+
+```{r}
+russian_losses_all_dates %>% 
+  select(report_date, tanks) %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
+  tidyr::drop_na() %>% 
+  arrange(report_date) %>% 
+  pull(tanks) %>% 
+  ts(frequency = 7) %>% 
+  stl(t.window=13, s.window="periodic", robust=TRUE) %>% 
+  forecast::autoplot()
+
+
+```
+
+```{r}
+russian_losses_all_dates %>% 
+  select(report_date, tanks) %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
+  tidyr::drop_na() %>% 
+  arrange(report_date) %>% 
+  pull(tanks) %>%
+  forecast::ggAcf()
+```
+
+## Distribution Analysis
+
+The following histogram of the daily values hints at a Poisson distribution of event counts (tank losses) over the discrete time intervals (days), which would be expected.
+
+```{r}
+russian_losses_all_dates %>% 
+  select(report_date, tanks) %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
+  tidyr::drop_na() %>% 
+  arrange(report_date) %>% 
+  ggplot(aes(tanks)) +
+  geom_histogram(bins = 20) +
+  labs(title="Histogram of Russian Daily Tank Loss Estimates",
+       x="Tank Losses")
+
+```
