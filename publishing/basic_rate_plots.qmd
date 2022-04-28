@@ -1,0 +1,166 @@
+---
+title: "Ukraine War: Russian Losses"
+author: "Cormac Nolan"
+date: "3/17/2022"
+output: html_document
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-tools: true
+---
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(ggplot2)
+library(forecast)
+library(here)
+
+```
+
+## Import
+
+Data sourced from the [Kyiv Independent Twitter feed](https://twitter.com/KyivIndependent/media) who sourced it from the Ukrainian Defense Ministry.
+
+These are imperfect estimates, given during chaotic wartime conditions, from an institution that is would be incentivised to inflate its figures. This isn't to say that the Defense Ministry is consciously inflating them, but it bears remembering when looking at this data.
+
+```{r import}
+source(here("data/ukrain_defense_ministry_russian_loss_estimates.R"))
+
+campaign_length = as.integer(max(russian_losses$report_date) - min(russian_losses$report_date))
+campaign_length_weeks = ceiling(campaign_length / 7)
+
+russian_losses
+ 
+```
+
+## Rates
+
+First we need to apply interpolation in case there were any missed days, linear is fine.
+
+```{r, fig.height=7}
+
+russian_losses_all_dates <-
+  dplyr::tibble(report_date = min(russian_losses$report_date) + 0:campaign_length) %>%
+  left_join(russian_losses, by="report_date")
+
+
+russian_losses_all_dates <- 
+  russian_losses_all_dates %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=forecast::na.interp)) %>%
+  mutate(across(where(~is.numeric(.x)), .fns=as.numeric)) %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=round))
+
+
+russian_losses_all_dates <- 
+  russian_losses_all_dates %>% 
+  mutate(campaign_week_number = c(0, rep(1:campaign_length_weeks, each=7)[1:(campaign_length)]))
+  
+russian_losses_all_dates$report_date
+```
+
+Now let's calculate rates...
+
+```{r}
+daily_diff <- function(val){
+  val - dplyr::lag(val) 
+}
+
+calculate_loss_rate <- function(df){
+  
+  df %>% 
+    mutate(across(where(is.numeric), .fns=daily_diff), .keep = "unused") %>% 
+    tidyr::drop_na()
+}
+
+
+russian_losses_rates <- 
+  russian_losses_all_dates %>% 
+    select(-campaign_week_number) %>% 
+    calculate_loss_rate()
+
+
+select(russian_losses_rates, report_date, soldiers, tanks) %>% 
+  head(5)
+```
+
+## Rate Plots
+
+#### Vehicles
+
+```{r, fig.width=10, fig.height=6, warning=FALSE, message=FALSE}
+format_names <- function(in_string){
+  out_string = in_string %>% 
+    stringr::str_replace_all("_", " ") %>% 
+    stringr::str_to_title()
+}
+
+ukraine_blue <- "#0057b7"
+ukraine_yellow <- "#ffd700"
+ukraine_yellow_darkened <- "#d6b500"
+text_colour <- "#555555"
+
+ukraine_plot_theme <- function(){
+  theme(plot.title = element_text(size = 20, colour = text_colour),
+      strip.text.x = element_text(size = 16, colour = text_colour),
+      axis.title = element_text(size = 15, face="bold", colour = text_colour),
+      axis.text.x = element_text(
+        angle = 30, hjust = 1, colour = text_colour, size = 13
+        ),
+      axis.text.y = element_text(size = 13)
+      ) 
+}
+
+russian_losses_rates %>% 
+  select(report_date, tanks, armoured_personel_carriers, artillery_pieces) %>% 
+  rename_with(.fn=format_names, .cols=-contains("date")) %>% 
+  tidyr::pivot_longer(-report_date, names_to = "category", values_to = "loss_count") %>% 
+  ggplot(aes(report_date, loss_count, group=category)) +
+  geom_bar(stat = "identity", alpha = 0.5, fill = ukraine_yellow_darkened) +
+  geom_smooth(se=FALSE, span=0.7, method = "loess", formula = y ~ x, colour = ukraine_blue, size = 1.5) +
+  facet_wrap(~category) +
+  theme_minimal() +
+  ukraine_plot_theme() +
+  labs(title = "Daily Loss Rates: Common Motorized or Tracked",
+       x = "Report Date", 
+       y = "Loss Count")
+```
+
+#### Aircraft
+
+```{r, fig.width=10, fig.height=6, warning=FALSE, message=FALSE}
+russian_losses_rates %>% 
+  select(report_date, planes, helicopters, uav) %>%
+  rename_with(.fn=format_names, .cols=-contains("date")) %>% 
+  rename(UAVs = Uav) %>% 
+  tidyr::pivot_longer(-report_date, names_to = "category", values_to = "loss_count") %>% 
+  ggplot(aes(report_date, loss_count, group=category)) +
+  geom_bar(stat = "identity", alpha = 0.5, fill = ukraine_yellow_darkened) +
+  geom_smooth(se=FALSE, span=0.7, method = "loess", formula = y ~ x, colour = ukraine_blue, size = 1.5) +
+  facet_wrap(~category) +
+  theme_minimal() +
+  ukraine_plot_theme() +
+  labs(title = "Daily Loss Rates: Aircraft",
+       x = "Report Date", 
+       y = "Loss Count")
+
+```
+
+#### Soldiers
+
+```{r, fig.width=10, fig.height=6, warning=FALSE, message=FALSE}
+russian_losses_rates %>% 
+  select(report_date, soldiers) %>%
+  rename_with(.fn=format_names, .cols=-contains("date")) %>% 
+  tidyr::pivot_longer(-report_date, names_to = "category", values_to = "loss_count") %>% 
+  ggplot(aes(report_date, loss_count, group=category)) +
+  geom_bar(stat = "identity", alpha = 0.5, fill = ukraine_yellow_darkened) +
+  geom_smooth(se=FALSE, span=0.7, method = "loess", formula = y ~ x, colour = ukraine_blue, size = 1.5) +
+  facet_wrap(~category) +
+  theme_minimal() +
+  ukraine_plot_theme() +
+  labs(title = "Daily Loss Rates: Soldiers",
+       x = "Report Date", 
+       y = "Loss Count")
+```
