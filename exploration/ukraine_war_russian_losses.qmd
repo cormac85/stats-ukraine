@@ -3,6 +3,11 @@ title: "Ukraine War: Russian Losses"
 author: "Cormac Nolan"
 date: "3/17/2022"
 output: html_document
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-tools: true
 ---
 
 ```{r setup, include=FALSE}
@@ -10,30 +15,48 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
 library(forecast)
-library(fable)
-library(tsibble)
+# library(fable)
+# library(tsibble)
 ```
 
 ## Import
+Data sourced from the [Kyiv Independent Twitter feed](https://twitter.com/KyivIndependent/media)
+who sourced it from the Ukrainian Defense Ministry.
 
+These are imperfect estimates, given during chaotic wartime conditions, from an 
+institution that is would be incentivised to inflate its figures. This isn't to
+say that the Defense Ministry is consciously inflating them, but it bears
+remembering when looking at this data.
 ```{r cars}
 russian_losses <- tibble::tribble(
   ~report_date, ~soldiers, ~planes, ~helicopters, ~tanks,  ~artillery_pieces,  
   ~armoured_personell_carriers, ~mlrs, ~boats, ~vehicles, ~fuel_tankers, ~uav, ~aa_systems,
   "2022-02-23", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   "2022-02-26", 3500, 14, 8, 102, 15, 536, 1, 0, 0, 0, 0, 0,
-  "2022-02-28", 3500, 29, 29, 191, 74, 816, 22, 0, 291, 60, 3, 5,
+  "2022-02-27", 4300, 27, 26, 146, 49, 706, 4, 2, 30, 60, 2, 1,
+  "2022-02-28", 5300, 29, 29, 191, 74, 816, 22, 0, 291, 60, 3, 5,
   "2022-03-01", 5710, 29, 29, 198, 77, 846, 24, 2, 305, 60, 3, 7,
   "2022-03-02", 5840, 30, 31, 211, 85, 862, 40, 2, 355, 60, 3, 9,
+  "2022-03-03", 9000, 30, 31, 217, 90, 900, 42, 2, 374, 60, 3, 11,
+  "2022-03-04", 9166, 33, 37, 251, 105, 939, 50, 2, 404, 60, 3, 18,
+  "2022-03-05", 10000, 39, 40, 269, 105, 945, 50, 2, 409, 60, 3, 18,
   "2022-03-06", 11000, 44, 48, 285, 109, 985, 50, 2, 447, 60, 4, 21,
   "2022-03-07", 11000, 46, 68, 290, 117, 999, 50, 2, 454, 60, 7, 23,
   "2022-03-08", 12000, 48, 80, 303, 120, 1036, 56, 2, 474, 60, 7, 27,
   "2022-03-10", 12000, 49, 81, 335, 123, 1105, 56, 2, 526, 60, 7, 29,
   "2022-03-11", 12000, 57, 83, 353, 125, 1165, 58, 2, 558, 60, 7, 31,
+  "2022-03-12", 12000, 58, 83, 362, 135, 1205, 62, 2, 585, 60, 7, 33,
+  "2022-03-13", 12000, 74, 86, 374, 140, 1226, 62, 2, 600, 60, 7, 34,
+  "2022-03-14", 12000, 77, 90, 389, 150, 1249, 64, 2, 617, 60, 8, 34,
+  "2022-03-15", 13500, 81, 95, 404, 150, 1279, 64, 2, 640, 60, 9, 36,
   "2022-03-16", 13800, 84, 108, 430, 190, 1375, 70, 2, 819, 60, 11, 43,
   "2022-03-17", 14000, 86, 108, 444, 201, 1435, 72, 2, 864, 60, 11, 43,
   "2022-03-18", 14200, 93, 112, 450, 205, 1448, 72, 3, 879, 60, 12, 43,
   "2022-03-19", 14400, 95, 115, 466, 213, 1470, 72, 3, 914, 60, 17, 44,
+  "2022-03-20", 14700, 96, 118, 476, 230, 1487, 74, 3, 947, 60, 21, 44,
+  "2022-03-21", 15000, 97, 121, 498, 240, 1535, 80, 3, 969, 60, 24, 45,
+  "2022-03-22", 15300, 99, 123, 509, 252, 1556, 80, 3, 1000, 70, 35, 45,
+  "2022-03-23", 15600, 101, 124, 517, 267, 1578, 80, 4, 1008, 70, 42, 47,
   "2022-03-24", 15800, 108, 124, 530, 280, 1597, 82, 4, 1033, 72, 50, 47,
   "2022-03-25", 16100, 115, 125, 561, 291, 1625, 90, 5, 1089, 72, 53, 50,
   "2022-03-26", 16400, 117, 127, 575, 293, 1640, 91, 7, 1131, 73, 56, 51,
@@ -48,6 +71,8 @@ russian_losses <- tibble::tribble(
   "2022-04-10", 19300, 152, 137, 722, 342, 1911, 108, 7, 1384, 76, 112, 55,
   "2022-04-12", 19600, 157, 140, 732, 349, 1946, 111, 7, 1406, 76, 124, 63,
   "2022-04-13", 19800, 158, 143, 739, 358, 1964, 116, 7, 1429, 76, 132, 64,
+  "2022-04-14", 19900, 160, 144, 753, 366, 1968, 122, 7, 1437, 76, 134, 64,
+  "2022-04-15", 20000, 163, 144, 756, 366, 1976, 122, 8, 1443, 76, 135, 66,
   "2022-04-16", 20100, 163, 145, 762, 371, 1982, 125, 8, 1458, 76, 138, 66,
   "2022-04-17", 20300, 165, 146, 773, 376, 2002, 127, 8, 1471, 76, 148, 66,
   "2022-04-18", 20600, 167, 147, 790, 381, 2041, 130, 8, 1487, 76, 155, 67,
@@ -213,8 +238,10 @@ rate_plot(russian_losses_all_dates, helicopters)
 
 ```
 
-## Seasonal Decomposition to Check for Report Effects
-
+## Seasonal Decomposition to Check for Report Effects (Tanks)
+Although it does find a 7-day seasonality pattern, and the trend line is 
+useful, I would be skeptical if there the fit was finding anything useful at
+all.
 ```{r}
 russian_losses_all_dates %>% 
   select(report_date, tanks) %>% 
@@ -229,6 +256,12 @@ russian_losses_all_dates %>%
 
 ```
 
+Especially since the auto-correlations don't show significant spikes at 7 and 
+14-day intervals as you would expect. The only thing it really shows is that
+recent values are correlated with current values, suggesting that loss intensity
+tends to ramp up and down over several days. A moving average model or similar 
+like LOESS is perfectly fine for summarising this kind of timeseries.
+
 ```{r}
 russian_losses_all_dates %>% 
   select(report_date, tanks) %>% 
@@ -241,7 +274,7 @@ russian_losses_all_dates %>%
 
 ## Distribution Analysis
 
-The following histogram of the daily values hints at a Poisson distribution of event counts (tank losses) over the discrete time intervals (days), which would be expected.
+The following histogram of the daily tank loss values hints at a Poisson distribution of event counts (tank losses) over the discrete time intervals (days), which would be expected.
 
 ```{r}
 russian_losses_all_dates %>% 

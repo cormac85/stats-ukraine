@@ -68,9 +68,9 @@ TBD
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Publish to Github
-- [ ] Publish Ukraine Armed Forces estimates of Russian losses
-- [ ] Add Additional Templates w/ Examples
+- [ ] Upload to Github
+- [ ] Publish Ukraine Armed Forces estimates of Russian loss rates
+- [ ] Publish timeline plot
 
 
 See the [open issues](https://github.com/cormac85/stats-ukraine/issues) for a full list of proposed features (and known issues).
