@@ -1,8 +1,9 @@
+# Config
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
-# renv/
+publishing/rsconnect
 
 # images
 *.png
