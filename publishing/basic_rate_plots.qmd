@@ -89,7 +89,7 @@ select(russian_losses_rates, report_date, soldiers, tanks) %>%
 
 #### Vehicles
 
-```{r, fig.width=10, fig.height=6, warning=FALSE, message=FALSE}
+```{r, fig.width=6, fig.height=10, warning=FALSE, message=FALSE}
 format_names <- function(in_string){
   out_string = in_string %>% 
     stringr::str_replace_all("_", " ") %>% 
@@ -97,6 +97,8 @@ format_names <- function(in_string){
 }
 
 ukraine_blue <- "#0057b7"
+ukraine_blue_light <- "#ACC8E7"
+ukraine_blue_very_light <- "#EDF4FA"
 ukraine_yellow <- "#ffd700"
 ukraine_yellow_darkened <- "#d6b500"
 text_colour <- "#555555"
@@ -108,8 +110,11 @@ ukraine_plot_theme <- function(){
       axis.text.x = element_text(
         angle = 30, hjust = 1, colour = text_colour, size = 13
         ),
-      axis.text.y = element_text(size = 13)
-      ) 
+      axis.text.y = element_text(size = 13),
+      panel.background = element_rect(
+        fill = ukraine_blue_very_light, colour = ukraine_blue_light
+        )
+      )
 }
 
 russian_losses_rates %>% 
@@ -119,7 +124,7 @@ russian_losses_rates %>%
   ggplot(aes(report_date, loss_count, group=category)) +
   geom_bar(stat = "identity", alpha = 0.5, fill = ukraine_yellow_darkened) +
   geom_smooth(se=FALSE, span=0.7, method = "loess", formula = y ~ x, colour = ukraine_blue, size = 1.5) +
-  facet_wrap(~category) +
+  facet_wrap(~category, ncol=1, scales="free_y") +
   theme_minimal() +
   ukraine_plot_theme() +
   labs(title = "Daily Loss Rates: Common Motorized or Tracked",
@@ -129,7 +134,7 @@ russian_losses_rates %>%
 
 #### Aircraft
 
-```{r, fig.width=10, fig.height=6, warning=FALSE, message=FALSE}
+```{r, fig.width=6, fig.height=10, warning=FALSE, message=FALSE}
 russian_losses_rates %>% 
   select(report_date, planes, helicopters, uav) %>%
   rename_with(.fn=format_names, .cols=-contains("date")) %>% 
@@ -137,9 +142,10 @@ russian_losses_rates %>%
   tidyr::pivot_longer(-report_date, names_to = "category", values_to = "loss_count") %>% 
   ggplot(aes(report_date, loss_count, group=category)) +
   geom_bar(stat = "identity", alpha = 0.5, fill = ukraine_yellow_darkened) +
-  geom_smooth(se=FALSE, span=0.7, method = "loess", formula = y ~ x, colour = ukraine_blue, size = 1.5) +
-  facet_wrap(~category) +
-  theme_minimal() +
+  geom_smooth(
+    se=FALSE, span=0.7, method = "loess", 
+    formula = y ~ x, colour = ukraine_blue, size = 1.5) +
+  facet_wrap(~category, ncol=1, scales="free_y") +  theme_minimal() +
   ukraine_plot_theme() +
   labs(title = "Daily Loss Rates: Aircraft",
        x = "Report Date", 
@@ -149,7 +155,7 @@ russian_losses_rates %>%
 
 #### Soldiers
 
-```{r, fig.width=10, fig.height=6, warning=FALSE, message=FALSE}
+```{r, fig.width=6, fig.height=10, warning=FALSE, message=FALSE}
 russian_losses_rates %>% 
   select(report_date, soldiers) %>%
   rename_with(.fn=format_names, .cols=-contains("date")) %>% 
