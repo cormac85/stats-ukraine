@@ -1,7 +1,7 @@
 ---
-title: "Ukraine War: Russian Losses"
+title: "Ukraine War: Russian Losses Timeline"
 author: "Cormac Nolan"
-date: "3/17/2022"
+date: Sys.Date()
 output: html_document
 format:
   html:
@@ -84,15 +84,23 @@ select(russian_losses_rates, report_date, soldiers, tanks) %>%
   head(5)
 ```
 
-## Rate Plots
+### Important Events
 
-#### Vehicles
+```{r}
+source(here("./data/ukraine_war_important_events.R"))
+important_events %>%  head(1)
+```
+
+## Rate Plots Timeline
+
+#### APC's
 
 ```{r}
 
 ukraine_blue <- "#0057b7"
 ukraine_blue_light <- "#ACC8E7"
 ukraine_blue_very_light <- "#EDF4FA"
+ukraine_blue_dark <- "#00346d"
 ukraine_yellow <- "#ffd700"
 ukraine_yellow_darkened <- "#d6b500"
 text_colour <- "#555555"
@@ -131,9 +139,15 @@ prepare_rate_plot_data <- function(rates_df, time_col, ...) {
 }
 
 
-rate_plot <- function(rates_df, plot_title, plot_x, plot_y) {
-  rates_df %>% 
-    ggplot(aes(report_date, loss_count, group=category)) +
+rate_plot <- function(
+    rates_df, events_df, category_for_plot, plot_title, plot_x, plot_y
+  ) {
+  
+  current_plot_rates <-   rates_df %>% 
+    filter(category == category_for_plot)
+  
+  current_plot_rates %>% 
+    ggplot(aes(report_date, loss_count)) +
     geom_bar(stat = "identity", alpha = 0.5, fill = ukraine_yellow_darkened) +
     geom_smooth(
       se=FALSE, 
@@ -143,45 +157,87 @@ rate_plot <- function(rates_df, plot_title, plot_x, plot_y) {
       colour = ukraine_blue, 
       size = 1.5
     ) +
-    facet_wrap(~category, ncol=1, scales="free_y") +
+    geom_vline(mapping = aes(xintercept = report_date), 
+               data = events_df, 
+               colour = ukraine_blue_dark,
+               linetype="dashed", alpha = 0.8, size = 1.1) +
+    geom_text(
+      mapping = aes(
+        x = report_date + 1,
+        label = event_name,
+        y = max(current_plot_rates$loss_count) / 2
+      ),
+      data = mutate(events_df, category = category_for_plot),
+      colour = ukraine_blue_dark,
+      angle = 90,
+      size = 5
+    ) +
     theme_minimal() +
     ukraine_plot_theme() +
     labs(title = plot_title, x = plot_x,y = plot_y)
 }
 
+
 ```
 
-```{r, fig.width=6, fig.height=10, warning=FALSE, message=FALSE}
+```{r, fig.width=8, fig.height=6, warning=FALSE, message=FALSE}
 russian_losses_rates %>% 
   prepare_rate_plot_data(
-    report_date, tanks, artillery_pieces, armoured_personel_carriers
+    report_date, armoured_personel_carriers
   ) %>% 
-  rate_plot(plot_title = "Russian Daily Loss Rates: Common Vehicles", 
-            plot_x = "Report Date", 
-            plot_y="Loss Count")
+  rate_plot(
+    events_df = filter(important_events, event_category == "land"),
+    category_for_plot = "Armoured Personel Carriers",
+    plot_title = "Russian Daily Loss Rates: APC's", 
+    plot_x = "Report Date", 
+    plot_y="Loss Count"
+)
 ```
 
 #### Aircraft
 
-```{r, fig.width=6, fig.height=10, warning=FALSE, message=FALSE}
+```{r, fig.width=8, fig.height=6, warning=FALSE, message=FALSE}
 russian_losses_rates %>% 
   prepare_rate_plot_data(
-    report_date, planes, helicopters, uav
-  ) %>%
-  rate_plot(plot_title = "Russian Daily Loss Rates: Aircraft",
-            plot_x = "Report Date",
-            plot_y="Loss Count")
+    report_date, uav
+  ) %>% 
+  rate_plot(
+    events_df = filter(important_events, event_category == "land"),
+    category_for_plot = "UAV",
+    plot_title = "Russian Daily Loss Rates: UAV's", 
+    plot_x = "Report Date", 
+    plot_y="Loss Count"
+)
 
 ```
 
-#### Soldiers
-
-```{r, fig.width=6, fig.height=10, warning=FALSE, message=FALSE}
+```{r, fig.width=8, fig.height=6, warning=FALSE, message=FALSE}
 russian_losses_rates %>% 
   prepare_rate_plot_data(
-    report_date, soldiers, armoured_personel_carriers
-  ) %>%
-  rate_plot(plot_title = "Russian Daily Loss Rates: Soldiers",
-            plot_x = "Report Date",
-            plot_y="Loss Count")
+    report_date, helicopters
+  ) %>% 
+  rate_plot(
+    events_df = filter(important_events, event_category == "land"),
+    category_for_plot = "Helicopters",
+    plot_title = "Russian Daily Loss Rates: Helicopters", 
+    plot_x = "Report Date", 
+    plot_y="Loss Count"
+)
+
+```
+
+#### Artillery
+
+```{r, fig.width=8, fig.height=6, warning=FALSE, message=FALSE}
+russian_losses_rates %>% 
+  prepare_rate_plot_data(
+    report_date, artillery_pieces
+  ) %>% 
+  rate_plot(
+    events_df = filter(important_events, event_category == "land"),
+    category_for_plot = "Artillery Pieces",
+    plot_title = "Russian Daily Loss Rates: Artillery", 
+    plot_x = "Report Date", 
+    plot_y="Loss Count"
+)
 ```
