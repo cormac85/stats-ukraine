@@ -1,7 +1,7 @@
 ---
 title: "Ukraine War: Russian Losses Timeline"
 author: "Cormac Nolan"
-date: Sys.Date()
+date: "`r Sys.Date()`"
 output: html_document
 format:
   html:
@@ -93,7 +93,7 @@ important_events %>%  head(1)
 
 ## Rate Plots Timeline
 
-#### APC's
+#### APC's - April Onwards
 
 ```{r}
 
@@ -185,10 +185,32 @@ russian_losses_rates %>%
   prepare_rate_plot_data(
     report_date, armoured_personel_carriers
   ) %>% 
+  filter(report_date >= "2022-04-01") %>%
   rate_plot(
-    events_df = filter(important_events, event_category == "land"),
+    events_df = filter(
+      important_events, event_category == "land", report_date >= "2022-04-01"
+    ),
     category_for_plot = "Armoured Personel Carriers",
     plot_title = "Russian Daily Loss Rates: APC's", 
+    plot_x = "Report Date", 
+    plot_y="Loss Count"
+)
+```
+
+### Tanks - April Onward
+
+```{r, fig.width=8, fig.height=6, warning=FALSE, message=FALSE}
+russian_losses_rates %>% 
+  prepare_rate_plot_data(
+    report_date, tanks
+  ) %>% 
+  filter(report_date >= "2022-04-01") %>%
+  rate_plot(
+    events_df = filter(
+      important_events, event_category == "land", report_date >= "2022-04-01"
+    ),
+    category_for_plot = "Tanks",
+    plot_title = "Russian Daily Loss Rates: Tanks", 
     plot_x = "Report Date", 
     plot_y="Loss Count"
 )
