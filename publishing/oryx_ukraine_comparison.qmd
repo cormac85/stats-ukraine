@@ -1,0 +1,167 @@
+---
+title: "Ukraine War: Russian Losses Timeline"
+author: "Cormac Nolan"
+date: "`r Sys.Date()`"
+output: html_document
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-tools: true
+---
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(ggplot2)
+library(forecast)
+library(here)
+library(tesseract)  # Image Recognition
+```
+
+## Import
+
+Data sourced from the [Kyiv Independent Twitter feed](https://twitter.com/KyivIndependent/media) who sourced it from the Ukrainian Defense Ministry.
+
+These are imperfect estimates, given during chaotic wartime conditions, from an institution that is would be incentivised to inflate its figures. This isn't to say that the Defense Ministry is consciously inflating them, but it bears remembering when looking at this data.
+
+```{r import_ua}
+source(here("data/ukraine_defense_ministry_russian_loss_estimates.R"))
+
+campaign_length = as.integer(max(russian_losses$report_date) - min(russian_losses$report_date))
+campaign_length_weeks = ceiling(campaign_length / 7)
+
+russian_losses_ua <- russian_losses
+rm(russian_losses)
+
+```
+
+```{r import_oryx}
+source(here("data/ukraine_defense_ministry_russian_loss_estimates.R"))
+
+russian_losses_oryx <- readRDS(url("https://github.com/favstats/uaconflict_equipmentloss/raw/main/data/oryx_data.rds","rb"))
+
+russian_losses_oryx
+ 
+```
+
+## Rates
+
+First we need to apply interpolation in case there were any missed days, linear is fine.
+
+```{r, fig.height=7}
+
+russian_losses_ua_clean <-
+  dplyr::tibble(report_date = min(russian_losses_ua$report_date) + 0:campaign_length) %>%
+  left_join(russian_losses_ua, by="report_date")
+
+
+russian_losses_ua_clean <- 
+  russian_losses_ua_clean %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=forecast::na.interp)) %>%
+  mutate(across(where(~is.numeric(.x)), .fns=as.numeric)) %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=round))
+
+
+russian_losses_ua_clean <- 
+  russian_losses_ua_clean %>% 
+  mutate(campaign_week_number = c(0, rep(1:campaign_length_weeks, each=7)[1:(campaign_length)]))
+  
+russian_losses_ua_clean$report_date
+```
+
+Now let's calculate rates...
+
+```{r}
+daily_diff <- function(val){
+  val - dplyr::lag(val) 
+}
+
+calculate_loss_rate <- function(df){
+  
+  df %>% 
+    mutate(across(where(is.numeric), .fns=daily_diff), .keep = "unused") %>% 
+    tidyr::drop_na()
+}
+
+
+russian_losses_ua_rates <- 
+  russian_losses_ua_clean %>% 
+    select(-campaign_week_number) %>% 
+    calculate_loss_rate()
+
+
+select(russian_losses_ua_rates, report_date, soldiers, tanks) %>% 
+  head(5)
+```
+
+## Oryx Loss Rate
+
+```{r}
+russian_losses_oryx %>% 
+  mutate(report_date = as.Date(timestamp)) %>% 
+  filter(status != "damages") %>% 
+  group_by(cntry_army, equipment_type, system, report_date) %>% 
+  tally()
+  
+
+```
+
+## Oryx Date Image Recognition
+
+```{r}
+
+safe_ocr <- function(image_link, engine) {
+  result <- tryCatch(
+    {
+      tesseract::ocr(image_link, eng = engine)
+    },
+    error=function(cond) {
+      message("Failed to read image!")
+      NA_character_
+    }
+  )
+
+  result
+}
+
+date_engine <- tesseract(
+  options = list(tessedit_char_whitelist = "-./0123456789")
+)
+
+russian_losses_oryx <-
+  russian_losses_oryx %>% 
+  sample_n(10) %>% 
+  mutate(image_ocr_text = purrr::map_chr(
+    image_link, safe_ocr, engine = date_engine
+  )
+  )
+
+russian_losses_oryx$image_ocr_text
+
+```
+
+```{r}
+russian_losses_oryx$image_ocr_text %>% parsedate::parse_date()
+```
+
+```{r,eval=FALSE, include=FALSE}
+# library(abbyyR)
+# # Visit http://ocrsdk.com/plans-and-pricing/ 
+# # open account, set up an app and submit its credentials:  
+# random_loss$image_link
+# setapp(
+#   c(
+#     "bff3d28d-df23-40b1-940a-f015aa9d6571", 
+#     "37kzPAXO+BsWBihJxWDM6tjU"
+#   )
+# )
+# processRemoteImage(img_url=random_loss$image_link)
+# Sys.sleep(5) # wait a bit
+# tasklist <- listTasks()
+# (res <- readLines(as.character(tasklist[1, 7]), encoding = "UTF-8"))
+```
+
+```{r}
+
+```
