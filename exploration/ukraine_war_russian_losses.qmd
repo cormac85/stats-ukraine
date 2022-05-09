@@ -131,7 +131,7 @@ rate_plot <- function(df, loss_column){
     mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
     tidyr::drop_na() %>% 
     ggplot(aes(report_date, {{loss_column}})) +
-    geom_smooth(se=FALSE, span=0.5) +
+    geom_smooth(se=TRUE, span=0.5) +
     geom_bar(stat = "identity", alpha = 0.3) +
     labs(
       title = formatted_title, 
@@ -190,16 +190,40 @@ skeptical if there the fit was finding anything useful at all.
 
 ```{r}
 russian_losses_all_dates %>% 
-  select(report_date, tanks) %>% 
+  filter(report_date >= "2022-04-01") %>% 
+  select(report_date, armoured_personel_carriers) %>% 
   mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
   tidyr::drop_na() %>% 
   arrange(report_date) %>% 
-  pull(tanks) %>% 
-  ts(frequency = 7) %>% 
-  stl(t.window=13, s.window="periodic", robust=TRUE) %>% 
-  forecast::autoplot()
+  pull(armoured_personel_carriers) %>% 
+  ma(order=5) %>% 
+  # ts(frequency = 7) %>% 
+  # stl(t.window=13, s.window="periodic", robust=TRUE) %>% 
+  # decomose() %>% 
+  forecast::autoplot() +
+  ggplot2::ylim(0, 50) +
+  labs(title="APC Losses: 5-Day Moving Average of Daily Rate",
+       x = "Days", y = "APC Loss")
 
 
+```
+
+```{r}
+ar_fit_apc_losses <- 
+  russian_losses_all_dates %>% 
+  filter(report_date >= "2022-03-01") %>% 
+  select(report_date, armoured_personel_carriers) %>% 
+  mutate(across(where(~is.numeric(.x)), .fns=daily_diff)) %>% 
+  tidyr::drop_na() %>% 
+  arrange(report_date) %>% 
+  pull(armoured_personel_carriers) %>% 
+  auto.arima(seasonal=FALSE, trace=TRUE)
+
+ar_fit_apc_losses
+```
+
+```{r}
+ar_fit_apc_losses %>% checkresiduals()
 ```
 
 Especially since the auto-correlations don't show significant spikes at 7 and 14-day intervals as
