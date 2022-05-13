@@ -1,0 +1,182 @@
+---
+title: "EU Country Military Donations"
+author: "Cormac nolan"
+date: "`r Sys.Date()`"
+editor: visual
+format:
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    code-tools: true
+---
+
+## Inspiration
+
+[This post](https://www.reddit.com/r/ukraine/comments/umk3ln/how_much_aid_do_countries_allocate_to_ukraine_in/) inspired me to look at how distance from the war in Ukraine correlates with amount of money sent to Russia.
+
+```{r, include=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggmap)
+library(geosphere)
+source(here::here("theme.R"))
+secrets <- yaml::read_yaml(here::here("config/secret_config.yaml"))
+register_google(key = secrets$google_api_key)
+```
+
+## Import
+
+Ukraine War Tracker data from the IFW-Kiel Institute for the World Economy (Retrieved 2022-05-10)
+
+```{r}
+war_support_tracker <- readxl::read_xlsx(here::here("./data/UkraineTracker_v2_02052022.xlsx"), sheet="Aggregate Aid", range = "A1:S33")
+```
+
+You can add options to executable code like this
+
+```{r, cache=TRUE, echo=FALSE, message=FALSE}
+war_support_tracker <- 
+  war_support_tracker %>% 
+  mutate(country_geolocation = purrr::map(Country, ggmap::geocode))
+
+war_support_tracker %>% 
+  select(Country, `Direct Military Aid`, `GDP (EUR)`) %>% 
+  head()
+```
+
+```{r}
+war_support_tracker %>% 
+  filter(!str_detect(Country,"Commission")) %>% 
+  ggplot(aes(`Total aid (bilateral + EU) in % of GDP`)) +
+  geom_histogram(fill = ukraine_palette$ukraine_blue) +
+  labs(title = "Total Aid in % GDP of Selected Countries") +
+  ukraine_plot_theme()
+```
+
+```{r, fig.width=8, fig.height=10}
+war_support_tracker %>% 
+  filter(!str_detect(Country,"Commission")) %>% 
+  ggplot(
+    aes(fct_reorder(Country, `Total aid (bilateral + EU) in % of GDP`),
+        `Total aid (bilateral + EU) in % of GDP`)
+  ) +
+  geom_col(fill = ukraine_palette$ukraine_blue) +
+  labs(title = "Total Aid in % GDP of Selected Countries", x = "Country") +
+  ukraine_plot_theme() +
+  coord_flip()
+```
+
+## Contribution vs Distance to Moscow
+
+```{r, cache=TRUE, message=FALSE, warning=FALSE}
+moscow_geolocation = ggmap::geocode("Moscow")
+google_map_geo_to_vector <- function(geo){ c(geo$lon, geo$lat) }
+
+war_support_tracker <- 
+  war_support_tracker %>% 
+  mutate(
+    country_geolocation = purrr::map(
+      country_geolocation, 
+      google_map_geo_to_vector
+      ),
+    moscow_distance_km = purrr::map_dbl(
+      country_geolocation,
+      geosphere::distVincentyEllipsoid,
+      p2=google_map_geo_to_vector(moscow_geolocation)
+      ) / 1000
+    )
+
+```
+
+```{r}
+war_support_tracker %>% 
+  ggplot(
+    aes(
+      moscow_distance_km,
+      `Total aid (bilateral + EU) in % of GDP`,
+      size = `GDP (EUR)`
+      )
+  ) +
+  geom_point(colour = ukraine_palette$ukraine_blue, alpha=0.7) +
+  ukraine_plot_theme() +
+  scale_size(range = c(0.1, 15),
+             breaks = c(1e12, 5e12, 10e12, 15e12),
+             labels = c("1", "5", "10", "15"),
+             name = "GDP (Trillion EUR)") +
+  labs(title = "Country Distance to Moscow vs GDP Aid to Ukraine",
+       x = "Distance from Country Centre to Moscow")
+```
+
+```{r, fig.height=6, fig.width=8, warning=FALSE}
+war_support_tracker %>% 
+  ggplot(
+    aes(
+      moscow_distance_km,
+      `Total aid (bilateral + EU) in % of GDP`,
+      size = `GDP (EUR)`
+      )
+  ) +
+  geom_point(colour = ukraine_palette$ukraine_blue, alpha=0.7) +
+  ukraine_plot_theme() +
+  scale_size(range = c(0.1, 15),
+             breaks = c(1e12, 5e12, 10e12, 15e12),
+             labels = c("1", "5", "10", "15"),
+             name = "GDP (Trillion EUR)") +
+  labs(title = "Country Distance to Moscow vs GDP Aid to Ukraine",
+       x = "Distance from Country Centre to Moscow")
+```
+
+```{r}
+aid_vs_distance_lm <- 
+  war_support_tracker %>% 
+  select(
+    moscow_distance_km, `Total aid (bilateral + EU) in % of GDP`, `GDP (EUR)`
+  ) %>% 
+  mutate(across(.fns=log10)) %>% 
+  lm(formula = `Total aid (bilateral + EU) in % of GDP` ~ moscow_distance_km,
+     data=.)
+
+summary(aid_vs_distance_lm)
+```
+
+```{r, fig.height=6, fig.width=8, warning=FALSE, message=FALSE}
+war_support_tracker %>% 
+  select(
+    moscow_distance_km, `Total aid (bilateral + EU) in % of GDP`, `GDP (EUR)`
+  ) %>% 
+  mutate(across(.fns=log10)) %>% 
+  mutate(`GDP (EUR) ` = `GDP (EUR)`) %>% 
+  ggplot(
+    aes(
+      moscow_distance_km,
+      `Total aid (bilateral + EU) in % of GDP`,
+      size = `GDP (EUR)`
+      )
+  ) +
+  geom_point(aes(
+    moscow_distance_km,
+    `Total aid (bilateral + EU) in % of GDP`,
+    size = `GDP (EUR) `
+    ),
+    colour = ukraine_palette$ukraine_blue, alpha=0.7) +
+  ukraine_plot_theme() +
+  scale_size(name = "log10 of GDP") +
+  labs(title = "Log/Log of Country Distance to Moscow vs GDP Aid to Ukraine",
+       x = "Log10 Distance from Country Centre to Moscow") +
+  geom_smooth(method = "lm", 
+              show.legend = FALSE,
+              se = FALSE, 
+              formula = y ~ x,
+              colour = ukraine_palette$ukraine_yellow_darkened)
+```
+
+### Correlations
+
+```{r}
+war_support_tracker %>% 
+  select(
+    moscow_distance_km, `Total aid (bilateral + EU) in % of GDP`, `GDP (EUR)`
+  ) %>% 
+  # mutate(across(.fns=log10)) %>% 
+  cor() %>% 
+  corrplot::corrplot(method="number")
+```

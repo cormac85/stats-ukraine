@@ -4,6 +4,7 @@
 .RData
 .Ruserdata
 publishing/rsconnect
+config/*secret*
 
 # images
 *.png
@@ -14,3 +15,6 @@ publishing/rsconnect
 *.woff
 *.js
 
+
+# cache
+publishing/*cache*
