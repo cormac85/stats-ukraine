@@ -27,6 +27,7 @@ ukraine_plot_theme <- function(){
         axis.text.y = element_text(size = 13),
         panel.background = element_rect(
           fill = ukraine_palette$ukraine_blue_very_light, colour = ukraine_palette$ukraine_blue_light
-        )
+        ),
+        legend.title = element_text(size = 12, face = "bold", colour = ukraine_palette$text_colour)
   )
 }

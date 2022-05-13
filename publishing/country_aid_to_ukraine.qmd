@@ -126,8 +126,9 @@ war_support_tracker %>%
 ```
 
 ```{r}
-aid_vs_distance_lm <- 
+aid_vs_distance_eu_lm <- 
   war_support_tracker %>% 
+  filter(EU == 1) %>% 
   select(
     moscow_distance_km, `Total aid (bilateral + EU) in % of GDP`, `GDP (EUR)`
   ) %>% 
@@ -135,15 +136,21 @@ aid_vs_distance_lm <-
   lm(formula = `Total aid (bilateral + EU) in % of GDP` ~ moscow_distance_km,
      data=.)
 
-summary(aid_vs_distance_lm)
+aid_vs_distance_eu_lm_summary = summary(aid_vs_distance_eu_lm)
+aid_vs_distance_eu_lm_summary
 ```
 
 ```{r, fig.height=6, fig.width=8, warning=FALSE, message=FALSE}
 war_support_tracker %>% 
+  filter(EU == 1) %>% 
   select(
     moscow_distance_km, `Total aid (bilateral + EU) in % of GDP`, `GDP (EUR)`
   ) %>% 
-  mutate(across(.fns=log10)) %>% 
+  mutate(
+    across(
+      c(moscow_distance_km, `Total aid (bilateral + EU) in % of GDP`),
+      .fns=log10)
+  ) %>% 
   mutate(`GDP (EUR) ` = `GDP (EUR)`) %>% 
   ggplot(
     aes(
@@ -159,14 +166,29 @@ war_support_tracker %>%
     ),
     colour = ukraine_palette$ukraine_blue, alpha=0.7) +
   ukraine_plot_theme() +
-  scale_size(name = "log10 of GDP") +
-  labs(title = "Log/Log of Country Distance to Moscow vs GDP Aid to Ukraine",
-       x = "Log10 Distance from Country Centre to Moscow") +
+  scale_size(range = c(0.5, 15),
+             breaks = c(0.1e12, 1e12, 2e12, 3e12),
+             labels = c("0.1", "1", "2", "3"),
+             name = "GDP (Trillion EUR)") +
+  labs(title = "Log/Log of EU Country Distance to Moscow vs GDP % Aid to Ukraine",
+       x = "Log10 Distance from Country to Moscow",
+       y = "Log10 Total Aid as % of GDP") +
+  
   geom_smooth(method = "lm", 
               show.legend = FALSE,
               se = FALSE, 
               formula = y ~ x,
-              colour = ukraine_palette$ukraine_yellow_darkened)
+              colour = ukraine_palette$ukraine_yellow_darkened) +
+  annotate("text",
+           x=Inf, 
+           y = Inf, 
+           label = paste0(
+             "R² = ", round(aid_vs_distance_eu_lm_summary$r.squared, 2)
+             ), 
+           vjust=1.2, 
+           hjust=1.1, 
+           colour = ukraine_palette$text_colour,
+           size=6)
 ```
 
 ### Correlations
