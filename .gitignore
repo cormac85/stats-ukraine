@@ -5,16 +5,13 @@
 .Ruserdata
 publishing/rsconnect
 config/*secret*
-
 # images
 *.png
-
 # web
 *.css
 *.html
 *.woff
 *.js
-
-
 # cache
 publishing/*cache*
+.httr-oauth
