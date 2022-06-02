@@ -2,17 +2,6 @@ library(httr)
 library(dplyr)
 library(png)
 
-bearer_token <- Sys.getenv("TWITTER_BEARER")
-
-headers <- c(`Authorization` = sprintf('Bearer %s', bearer_token))
-
-params = list(
-  query="tweets",
-  `max_results` = '100',
-  `tweet.fields` = 'created_at,text',
-  `media.fields` = "preview_image_url",
-  `exclude` = "retweets"
-)
 
 get_user_id <- function(user_name, bearer_token) {
   base_url <- "https://api.twitter.com/2/users/by/username/"
@@ -26,10 +15,6 @@ get_user_id <- function(user_name, bearer_token) {
     jsonlite::fromJSON() %>% 
     return()
 }
-
-user_info <- get_user_id("Kyivindependent", bearer_token = bearer_token)
-
-user_info$data$id
 
 get_timeline_tweets <- function(user_id, bearer_token, max_results) {
   base_url <- "https://api.twitter.com/2/users/"
@@ -54,6 +39,21 @@ get_timeline_tweets <- function(user_id, bearer_token, max_results) {
     return()
 }
 
+
+# Setup
+
+bearer_token <- Sys.getenv("TWITTER_BEARER")
+
+headers <- c(`Authorization` = sprintf('Bearer %s', bearer_token))
+
+
+# Get user id
+user_info <- get_user_id("Kyivindependent", bearer_token = bearer_token)
+
+user_info$data$id
+
+# get timeline
+
 timeline_tweets <- get_timeline_tweets(
   user_info$data$id,
   bearer_token = bearer_token,
@@ -66,8 +66,32 @@ media_urls <-
   purrr::map_chr(function(x) x$url) %>% 
   tibble(media_urls = .)
 
-read_
 
-media_urls %>% 
-  purrr::map()
+media_urls <-
+  media_urls %>% 
+  mutate(
+    media_png = purrr::map(
+      media_urls, function(url) httr::content(httr::GET(url))
+    )
+  )
+
+extract_image_size <- function(img, dim_index){
+  dim(img)[dim_index]
+}
+
+media_urls <-
+  media_urls %>% 
+  mutate(
+    image_width = purrr::map_int(
+      media_png,
+      extract_image_size,
+      dim_index = 1
+    ),
+    image_height = purrr::map_int(
+      media_png,
+      extract_image_size,
+      dim_index = 2
+    )
+  )
+
 
