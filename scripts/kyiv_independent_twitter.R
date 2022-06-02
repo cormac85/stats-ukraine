@@ -94,4 +94,5 @@ media_urls <-
     )
   )
 
+grid::grid.raster(media_urls$media_png[[1]])
 
