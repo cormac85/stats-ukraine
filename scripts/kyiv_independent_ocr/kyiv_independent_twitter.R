@@ -1,6 +1,8 @@
 library(httr)
 library(dplyr)
 library(png)
+library(tesseract)
+library(imager)
 
 
 get_user_id <- function(user_name, bearer_token) {
@@ -66,12 +68,15 @@ media_urls <-
   purrr::map_chr(function(x) x$url) %>% 
   tibble(media_urls = .)
 
+media_urls$media_key <-
+  timeline_tweets$includes$media %>% 
+  purrr::map_chr(function(x) x$media_key)
 
 media_urls <-
   media_urls %>% 
   mutate(
-    media_png = purrr::map(
-      media_urls, function(url) httr::content(httr::GET(url))
+    media_png = imager::map_il(
+      media_urls, load.image
     )
   )
 
@@ -94,5 +99,33 @@ media_urls <-
     )
   )
 
-grid::grid.raster(media_urls$media_png[[1]])
 
+russia_loss_images <-
+  media_urls %>% 
+  filter(image_height == 1080, image_width == 1080)
+
+grid::grid.raster(russia_loss_images$media_png[[1]])
+
+tweet_data_from_media_key <- function(media_key, tweet_data){
+  media_keys_mask <- 
+    tweet_data %>% 
+    purrr::map_lgl(function(tweet) !is.null(tweet$attachments$media_keys[[1]])) 
+  
+  media_tweets <- tweet_data[media_keys_mask]
+  
+  current_media_keys_mask <- 
+    media_tweets %>% 
+    purrr::map_lgl(function(tweet) tweet$attachments$media_keys[[1]] == media_key)
+  
+  media_tweets[current_media_keys_mask]
+}
+
+russia_loss_images <-
+  russia_loss_images %>% 
+  mutate(tweet_info = purrr::map(media_key, tweet_data_from_media_key, timeline_tweets$data))
+
+eng <- tesseract("eng")
+text <- tesseract::ocr(russia_loss_images$media_urls[[1]], engine = eng)
+text
+
+russia_loss_images$media_png %>%  plot()
