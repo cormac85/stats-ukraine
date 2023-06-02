@@ -5,9 +5,10 @@
 ###################
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    
-    menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
-    menuItem("Widgets", tabName = "widgets", icon = icon("th"))
-    
-  )
+    includeCSS(SIDEBAR_STYLE_FILE_PATH),
+    menuItem("Personell", tabName = "dashboard", icon = icon("person-military-rifle")),
+    menuItem("Equipment", tabName = "widgets", icon = icon("jet-fighter"))
+  ),
+  width = 350
 )
+
