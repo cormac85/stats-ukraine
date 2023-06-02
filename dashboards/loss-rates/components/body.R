@@ -6,37 +6,20 @@
 # components as well.
 ###################
 body <- dashboardBody(
+  includeCSS(HEADER_STYLE_FILE_PATH),
+  includeCSS(SIDEBAR_STYLE_FILE_PATH),
+  includeCSS(BODY_STYLE_FILE_PATH),
   tabItems(
     
     ########################
     # First tab content
     ########################
     tabItem(
-      tabName = "dashboard",
+      tabName = "personnel",
       fluidRow(
-        
-        # CONTROLS
         box(
-          
-          title = "Controls",
-          
-          # Choose a column
-          selectInput(
-            "columnChoice",
-            "Choose a column:",
-            choices = colnames(df),
-            selected = "n"),
-          
-          sliderInput("slider", "Number of observations:", 1, 100, 50),
-          
-          # Create an eventReactive element
-          actionButton(
-            inputId = "submit",
-            label = "Submit column")
-          
-        ),
-        # PLOT THE THTINGS
-        box( plotOutput("histPlot") )
+          DT::dataTableOutput('personnel_table')
+        )
       )
     ),
     
@@ -44,8 +27,13 @@ body <- dashboardBody(
     # Second tab content
     ########################
     tabItem(
-      tabName = "widgets",
-      h2("Widgets tab content")
+      tabName = "equipment",
+      fluidRow(
+        box(tags$div(
+          tags$i(class = "fa-solid fa-person-digging", style = "font-size:6rem"),
+          tags$span("Under Construction!")
+        ))
+      )
     )
   )
 )

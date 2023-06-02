@@ -1,14 +1,8 @@
 server <- function(input, output, session) {
   
-  histPlot_df <- eventReactive(
-    input$submit,
-    {
-      df[[ input$columnChoice ]]
-    })
   
-  output$histPlot <- renderPlot({
-    data <- histPlot_df()[ seq_len(input$slider) ]
-    hist(data)
-  })
+  output$personnel_table <- DT::renderDataTable(
+    MOD_LOSSES_DF, options = list(scrollX = TRUE)
+  )
   
 }
