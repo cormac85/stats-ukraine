@@ -22,9 +22,14 @@ mod_equipment_losses_df <-
 mod_equipment_losses_clean_df <-
   mod_equipment_losses_df %>% 
   rowwise() %>% 
-  mutate(vehicles_and_fuel_tanks = 
-           sum(
-             vehicles_and_fuel_tanks, military_auto, fuel_tank, na.rm = TRUE
-             )
-         )
+  mutate(
+    vehicles_and_fuel_tanks = 
+      sum(
+        vehicles_and_fuel_tanks, military_auto, fuel_tank, na.rm = TRUE
+        )
+    ) %>% 
+  select(
+    -military_auto, -fuel_tank, -mobile_srbm_system, -greatest_losses_direction
+    )
+
 
