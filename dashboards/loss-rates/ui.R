@@ -7,5 +7,6 @@ source('./components/body.R')
 
 ui <- dashboardPage(
   header = header,
-  sidebar =  sidebar,
-  body = body)
+  sidebar = sidebar,
+  body = body
+)
