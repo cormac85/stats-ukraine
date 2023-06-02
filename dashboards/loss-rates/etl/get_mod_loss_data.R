@@ -2,6 +2,9 @@ library(dplyr)
 # library(googlesheets4)
 library(jsonlite)
 
+GLOBAL_VARIABLES_PATH = file.path("dashboards", "loss-rates", "global.R")
+source(file.path(here::here(), GLOBAL_VARIABLES_PATH))
+
 # oryx_sheet_url <- "https://docs.google.com/spreadsheets/d/1bngHbR0YPS7XH1oSA1VxoL4R34z60SJcR3NxguZM9GI/edit#gid=503925803"
 # oryx_totals_df <- googlesheets4::read_sheet(oryx_sheet_url, sheet="Totals")
 
@@ -31,5 +34,8 @@ mod_equipment_losses_clean_df <-
   select(
     -military_auto, -fuel_tank, -mobile_srbm_system, -greatest_losses_direction
     )
+
+mod_equipment_losses_clean_df %>% 
+  readr::write_rds(file.path(here::here(), DATA_PATH, MOD_LOSSES_FILE))
 
 
