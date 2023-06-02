@@ -16,7 +16,6 @@ library(dplyr)
 library(ggplot2)
 library(forecast)
 library(here)
-library(tesseract)  # Image Recognition
 ```
 
 ## Import
@@ -107,60 +106,6 @@ russian_losses_oryx %>%
 
 ```
 
-## Oryx Date Image Recognition
-
-```{r}
-
-safe_ocr <- function(image_link, engine) {
-  result <- tryCatch(
-    {
-      tesseract::ocr(image_link, eng = engine)
-    },
-    error=function(cond) {
-      message("Failed to read image!")
-      NA_character_
-    }
-  )
-
-  result
-}
-
-date_engine <- tesseract(
-  options = list(tessedit_char_whitelist = "-./0123456789")
-)
-
-russian_losses_oryx <-
-  russian_losses_oryx %>% 
-  sample_n(10) %>% 
-  mutate(image_ocr_text = purrr::map_chr(
-    image_link, safe_ocr, engine = date_engine
-  )
-  )
-
-russian_losses_oryx$image_ocr_text
-
-```
-
-```{r}
-russian_losses_oryx$image_ocr_text %>% parsedate::parse_date()
-```
-
-```{r,eval=FALSE, include=FALSE}
-# library(abbyyR)
-# # Visit http://ocrsdk.com/plans-and-pricing/ 
-# # open account, set up an app and submit its credentials:  
-# random_loss$image_link
-# setapp(
-#   c(
-#     "bff3d28d-df23-40b1-940a-f015aa9d6571", 
-#     "37kzPAXO+BsWBihJxWDM6tjU"
-#   )
-# )
-# processRemoteImage(img_url=random_loss$image_link)
-# Sys.sleep(5) # wait a bit
-# tasklist <- listTasks()
-# (res <- readLines(as.character(tasklist[1, 7]), encoding = "UTF-8"))
-```
 
 ```{r}
 
