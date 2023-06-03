@@ -11,28 +11,45 @@ body <- dashboardBody(
   includeCSS(BODY_STYLE_FILE_PATH),
   tabItems(
     
-    ########################
-    # First tab content
-    ########################
     tabItem(
-      tabName = "personnel",
+      tabName = "overview",
       fluidRow(
         box(
-          DT::dataTableOutput('personnel_table')
+          DT::dataTableOutput('overview_table'), width = 12
         )
       )
     ),
     
-    ########################
-    # Second tab content
-    ########################
+    tabItem(
+      tabName = "personnel",
+      fluidRow(
+        box(
+          tags$div(
+            tags$i(class = "fa-solid fa-person-digging", style = "font-size:6rem"),
+            tags$span("Under Construction!")
+          )
+        )
+      )
+    ),
+    
     tabItem(
       tabName = "equipment",
       fluidRow(
-        box(tags$div(
-          tags$i(class = "fa-solid fa-person-digging", style = "font-size:6rem"),
-          tags$span("Under Construction!")
-        ))
+        box(
+          tags$div(
+            tags$i(class = "fa-solid fa-person", style = "font-size:6rem"),
+            tags$span("Under Construction!")
+          )
+        )
+      )
+    ),
+    
+    tabItem(
+      tabName = "raw",
+      fluidRow(
+        box(
+          DT::dataTableOutput('raw_table'), width = 12
+        )
       )
     )
   )

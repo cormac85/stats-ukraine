@@ -5,9 +5,10 @@
 ###################
 sidebar <- dashboardSidebar(
   sidebarMenu(
+    menuItem("Overview", tabName = "overview", icon = icon("square-poll-vertical")),
     menuItem("Personnel", tabName = "personnel", icon = icon("person-military-rifle")),
-    menuItem("Equipment", tabName = "equipment", icon = icon("jet-fighter"))
-  ),
-  width = LOGO_WIDTH_PX
+    menuItem("Equipment", tabName = "equipment", icon = icon("jet-fighter")),
+    menuItem("Raw Data", tabName = "raw", icon = icon("eye"))
+  )
 )
 
