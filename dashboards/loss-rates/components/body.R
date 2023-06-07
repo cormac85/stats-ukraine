@@ -5,6 +5,7 @@
 # If you had multiple tabs, you could split those into their own
 # components as well.
 ###################
+print("Body")
 body <- dashboardBody(
   includeCSS(HEADER_STYLE_FILE_PATH),
   includeCSS(SIDEBAR_STYLE_FILE_PATH),
@@ -14,6 +15,7 @@ body <- dashboardBody(
     tabItem(
       tabName = "overview",
       fluidRow(
+        infoBoxOutput("overview_date", width = 6),
         box(
           DT::dataTableOutput('overview_table'), width = 12
         )
@@ -51,6 +53,23 @@ body <- dashboardBody(
           DT::dataTableOutput('raw_table'), width = 12
         )
       )
+    ),
+    
+    tabItem(
+      tabName = "sources",
+      fluidRow(
+        box(
+          title="Ukraine Ministry of Defense Data",
+          tags$div(
+            actionButton(
+              "mod_data_link", 
+              "Petro Ivaniuk",
+              onclick ="window.open('https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset', '_blank')")
+            ),
+            width = 12
+        )
+      )
     )
+    
   )
 )

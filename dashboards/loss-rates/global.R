@@ -20,3 +20,6 @@ try({
   )}, 
   silent = TRUE
 )
+
+OVERVIEW_LOSSES_DF = calculate_weekly_losses(MOD_LOSSES_DF)
+OVERVIEW_DATE = OVERVIEW_LOSSES_DF |> dplyr::pull("date") |> max()
