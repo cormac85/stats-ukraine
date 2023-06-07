@@ -15,7 +15,7 @@ body <- dashboardBody(
     tabItem(
       tabName = "overview",
       fluidRow(
-        infoBoxOutput("overview_date", width = 6),
+        infoBoxOutput("overview_date", width = 12),
         box(
           DT::dataTableOutput('overview_table'), width = 12
         )
@@ -50,6 +50,7 @@ body <- dashboardBody(
       tabName = "raw",
       fluidRow(
         box(
+          title="Ukraine Ministry of Defense Data",
           DT::dataTableOutput('raw_table'), width = 12
         )
       )
