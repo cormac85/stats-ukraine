@@ -14,6 +14,7 @@ TOTAL_LOSS_COL_NAME = "total_losses"
 
 # Source
 source(file.path(here::here(), DASHBOARD_PATH, "functions.R"))
+source(file.path(here::here(), "theme.R"))
 
 # CSS
 LOGO_WIDTH_PX = 250
@@ -28,6 +29,6 @@ try({
 )
 
 # Pre-calculated Data
-OVERVIEW_LOSSES_DF = calculate_weekly_losses(MOD_LOSSES_DF)
+OVERVIEW_LOSSES_DF = calculate_weekly_losses(MOD_LOSSES_DF, )
 OVERVIEW_DATE = OVERVIEW_LOSSES_DF |> dplyr::pull("date") |> max()
 

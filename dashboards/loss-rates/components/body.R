@@ -28,8 +28,13 @@ body <- dashboardBody(
         box(
           tags$div(
             tags$i(class = "fa-solid fa-person-digging", style = "font-size:6rem"),
-            tags$span("Under Construction!")
-          )
+            tags$span("Under Construction!"),
+          ),
+          width = 6
+        ),
+        box(
+          plotOutput("personnel_plot"),
+          width = 12
         )
       )
     ),

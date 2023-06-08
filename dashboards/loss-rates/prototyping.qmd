@@ -1,5 +1,10 @@
 ```{r}
 library(dplyr)
+library(ggplot2)
+
+source(file.path(here::here(), "dashboards", "loss-rates", "functions.R"))
+source(file.path(here::here(), "theme.R"))
+
 
 losses_df <- readr::read_rds(
   file.path(
@@ -11,67 +16,88 @@ losses_df
 ```
 
 ```{r}
-calculate_weekly_losses <- function(df) {
-  DAY_NUMBER_COL = "day"
+# calculate_weekly_losses <- function(df) {
+#   DAY_NUMBER_COL = "day"
+#   
+#   df$reverse_week_numbers <- 
+#     df |>
+#     pull(day) |> 
+#     (\(x) x / 7)() |>
+#     ceiling() |>
+#     as.integer() |>
+#     rev()
+#   
+#   df$week_numbers <- 
+#     df |>
+#     pull(day) |> 
+#     (\(x) x / 7)() |>
+#     ceiling() |>
+#     as.integer()
+#   
+#   df <-
+#     df |> 
+#     group_by(reverse_week_numbers) |> 
+#     mutate(reverse_week_start_date = min(date)) |> 
+#     dplyr::ungroup() |> 
+#     group_by(week_numbers) |> 
+#     mutate(week_start_date = min(date)) |> 
+#     dplyr::ungroup()
+#   
+#     
+#   reverse_weekly_losses_summary <-
+#     df |> 
+#     group_by(reverse_week_start_date) |> 
+#     summarise(across(-ends_with("diff"), max)) |> 
+#     tidyr::pivot_longer(
+#       cols = -c("date", 
+#                 "day",
+#                 "reverse_week_numbers",
+#                 "reverse_week_start_date",
+#                 "week_start_date",
+#                 "week_numbers"),
+#       names_to = "loss_type", values_to = "total_loss"
+#     )
+#   print(nrow(reverse_weekly_losses_summary))
+#   reverse_weekly_losses_summary <-
+#     reverse_weekly_losses_summary |> 
+#     left_join(
+#       df |> 
+#       group_by(reverse_week_start_date) |> 
+#       summarise(across(ends_with("diff"), sum)) |> 
+#       rename_with(\(x) gsub("_diff", "", x, fixed = TRUE)) |> 
+#       tidyr::pivot_longer(
+#         cols = -c("reverse_week_start_date"),
+#         names_to = "loss_type", values_to = "weekly_loss"
+#       ),
+#       by = c("reverse_week_start_date", "loss_type")
+#     ) |> 
+#     select(reverse_week_start_date, date, loss_type, total_loss, weekly_loss)
+#   print(nrow(reverse_weekly_losses_summary))
+#   reverse_weekly_losses_summary
+# }
+
+weekly_losses_df = calculate_weekly_losses(losses_df, format_loss_col = FALSE)
+
+weekly_losses_df
+```
+
+```{r}
+weekly_personnel_plot <- function(df) {
+  personnel_df <- df |> filter(loss_type == "personnel")
   
-  df$reverse_week_numbers <- 
-    df |>
-    pull(day) |> 
-    (\(x) x / 7)() |>
-    ceiling() |>
-    as.integer() |>
-    rev()
+  personnel_df[is.na(personnel_df)] <- 0
   
-  df$week_numbers <- 
-    df |>
-    pull(day) |> 
-    (\(x) x / 7)() |>
-    ceiling() |>
-    as.integer()
+  rate_plot <- 
+    personnel_df |> 
+    ggplot(aes(date, !! rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME), group=1)) +
+    geom_line(colour = ukraine_palette$ukraine_blue_dark) +
+    ukraine_plot_theme() +
+    labs(title = "RAF Personnel Weekly Loss Rate",
+         x = "Week End Date",
+         y="Personnell Loss")
   
-  df <-
-    df |> 
-    group_by(reverse_week_numbers) |> 
-    mutate(reverse_week_start_date = min(date)) |> 
-    dplyr::ungroup() |> 
-    group_by(week_numbers) |> 
-    mutate(week_start_date = min(date)) |> 
-    dplyr::ungroup()
-  
-    
-  reverse_weekly_losses_summary <-
-    df |> 
-    group_by(reverse_week_start_date) |> 
-    summarise(across(-ends_with("diff"), max)) |> 
-    filter(reverse_week_start_date == max(reverse_week_start_date)) |> 
-    tidyr::pivot_longer(
-      cols = -c("date", 
-                "day",
-                "reverse_week_numbers",
-                "reverse_week_start_date",
-                "week_start_date",
-                "week_numbers"),
-      names_to = "loss_type", values_to = "total_loss"
-    )
-  
-  reverse_weekly_losses_summary <-
-    reverse_weekly_losses_summary |> 
-    left_join(
-      df |> 
-      group_by(reverse_week_start_date) |> 
-      summarise(across(ends_with("diff"), sum)) |> 
-      filter(reverse_week_start_date == max(reverse_week_start_date)) |> 
-      rename_with(\(x) gsub("_diff", "", x, fixed = TRUE)) |> 
-      tidyr::pivot_longer(
-        cols = -c("reverse_week_start_date"),
-        names_to = "loss_type", values_to = "weekly_loss"
-      ),
-      by = c("reverse_week_start_date", "loss_type")
-    ) |> 
-    select(reverse_week_start_date, date, loss_type, total_loss, weekly_loss)
-    
-  reverse_weekly_losses_summary
+  rate_plot
 }
 
-calculate_weekly_losses(losses_df)
+weekly_personnel_plot(weekly_losses_df)
 ```

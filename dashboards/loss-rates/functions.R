@@ -27,13 +27,13 @@ create_downloadable_table <- function(df){
     ),
     rownames = FALSE
   )
-    
+  
   if (snakecase::to_title_case(CURRENT_WEEK_LOSS_COL_NAME) %in% colnames(df)){
     dt <- DT::formatStyle(
-        dt,
-        snakecase::to_title_case(CURRENT_WEEK_LOSS_COL_NAME),
-        fontWeight = "bold",
-        color = DT::styleInterval(
+      dt,
+      snakecase::to_title_case(CURRENT_WEEK_LOSS_COL_NAME),
+      fontWeight = "bold",
+      color = DT::styleInterval(
         cuts = c(0),
         values=c("black", "#2c9b1d")
       )
@@ -43,7 +43,7 @@ create_downloadable_table <- function(df){
   dt
 }
 
-calculate_weekly_losses <- function(df) {
+calculate_weekly_losses <- function(df, format_loss_col = TRUE) {
   # takes the losses data and calculates a weekly summary
   DAY_NUMBER_COL = "day"
   
@@ -76,7 +76,6 @@ calculate_weekly_losses <- function(df) {
     df |> 
     group_by(reverse_week_start_date) |> 
     summarise(across(-ends_with("diff"), max)) |> 
-    filter(reverse_week_start_date == max(reverse_week_start_date)) |> 
     tidyr::pivot_longer(
       cols = -c("date", 
                 "day",
@@ -93,7 +92,6 @@ calculate_weekly_losses <- function(df) {
       df |> 
         group_by(reverse_week_start_date) |> 
         summarise(across(ends_with("diff"), sum)) |> 
-        filter(reverse_week_start_date == max(reverse_week_start_date)) |> 
         rename_with(\(x) gsub("_diff", "", x, fixed = TRUE)) |> 
         tidyr::pivot_longer(
           cols = -c("reverse_week_start_date"),
@@ -110,17 +108,38 @@ calculate_weekly_losses <- function(df) {
   
   # Black magic that adds a "+" to the values in a the column if they're
   # greater than 0
-  CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME)
-  
-  reverse_weekly_losses_summary <-
-    reverse_weekly_losses_summary |> 
-    mutate(
-      {{CURRENT_WEEK_LOSS_COL_NAME}} := ifelse(
-        !! CURRENT_WEEK_LOSS_COL_NAME_SYM > 0,
-        paste0("+", !! CURRENT_WEEK_LOSS_COL_NAME_SYM),
-        !! CURRENT_WEEK_LOSS_COL_NAME_SYM
+  if (format_loss_col) {
+    CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME)
+    
+    reverse_weekly_losses_summary <-
+      reverse_weekly_losses_summary |> 
+      mutate(
+        {{CURRENT_WEEK_LOSS_COL_NAME}} := ifelse(
+          !! CURRENT_WEEK_LOSS_COL_NAME_SYM > 0,
+          paste0("+", !! CURRENT_WEEK_LOSS_COL_NAME_SYM),
+          !! CURRENT_WEEK_LOSS_COL_NAME_SYM
+        )
       )
-    )
+  }
   
   reverse_weekly_losses_summary
+}
+
+
+weekly_personnel_plot <- function(df) {
+  personnel_df <- df |> filter(loss_type == "personnel")
+  
+  personnel_df |> 
+    mutate(across(where(is.numeric), ~ replace_na(., 0)))
+  
+  rate_plot <- 
+    personnel_df |> 
+    ggplot(aes(date, !! rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME), group=1)) +
+    geom_line(colour = ukraine_palette$ukraine_blue_dark) +
+    ukraine_plot_theme() +
+    labs(title = "RAF Personnel Weekly Loss Rate",
+         x = "Week End Date",
+         y="Personnell Loss")
+  
+  rate_plot
 }
