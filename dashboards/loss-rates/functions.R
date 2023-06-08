@@ -2,11 +2,12 @@ library(dplyr)
 library(tidyr)
 
 create_downloadable_table <- function(df){
-  DT::datatable(
+  dt <- DT::datatable(
     df,
     extensions = c("Buttons"),
     options = list(
       dom = 'Bfrtip',
+      pageLength = 15,
       autoWidth = FALSE,
       scrollX=TRUE,
       buttons = list(
@@ -26,6 +27,20 @@ create_downloadable_table <- function(df){
     ),
     rownames = FALSE
   )
+    
+  if (snakecase::to_title_case(CURRENT_WEEK_LOSS_COL_NAME) %in% colnames(df)){
+    dt <- DT::formatStyle(
+        dt,
+        snakecase::to_title_case(CURRENT_WEEK_LOSS_COL_NAME),
+        fontWeight = "bold",
+        color = DT::styleInterval(
+        cuts = c(0),
+        values=c("black", "#2c9b1d")
+      )
+    )
+  }
+  
+  dt
 }
 
 calculate_weekly_losses <- function(df) {
@@ -69,7 +84,7 @@ calculate_weekly_losses <- function(df) {
                 "reverse_week_start_date",
                 "week_start_date",
                 "week_numbers"),
-      names_to = "loss_type", values_to = "total_loss"
+      names_to = "loss_type", values_to = TOTAL_LOSS_COL_NAME
     )
   
   reverse_weekly_losses_summary <-
@@ -82,11 +97,30 @@ calculate_weekly_losses <- function(df) {
         rename_with(\(x) gsub("_diff", "", x, fixed = TRUE)) |> 
         tidyr::pivot_longer(
           cols = -c("reverse_week_start_date"),
-          names_to = "loss_type", values_to = "weekly_loss"
+          names_to = "loss_type", values_to = CURRENT_WEEK_LOSS_COL_NAME
         ),
       by = c("reverse_week_start_date", "loss_type")
     ) |> 
-    select(reverse_week_start_date, date, loss_type, total_loss, weekly_loss)
+    select(
+      one_of(
+        c("reverse_week_start_date", "date", "loss_type",
+          TOTAL_LOSS_COL_NAME, CURRENT_WEEK_LOSS_COL_NAME)
+      )
+    )
+  
+  # Black magic that adds a "+" to the values in a the column if they're
+  # greater than 0
+  CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME)
+  
+  reverse_weekly_losses_summary <-
+    reverse_weekly_losses_summary |> 
+    mutate(
+      {{CURRENT_WEEK_LOSS_COL_NAME}} := ifelse(
+        !! CURRENT_WEEK_LOSS_COL_NAME_SYM > 0,
+        paste0("+", !! CURRENT_WEEK_LOSS_COL_NAME_SYM),
+        !! CURRENT_WEEK_LOSS_COL_NAME_SYM
+      )
+    )
   
   reverse_weekly_losses_summary
 }
