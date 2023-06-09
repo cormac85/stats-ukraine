@@ -1,5 +1,6 @@
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 
 create_downloadable_table <- function(df){
   dt <- DT::datatable(
