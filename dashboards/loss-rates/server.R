@@ -20,10 +20,26 @@ server <- function(input, output, session) {
     )
   })
   
-  output$personnel_plot <- renderPlot(
-    MOD_LOSSES_DF |> 
-      calculate_weekly_losses(format_loss_col = FALSE) |> 
-      weekly_personnel_plot()
-  )
+  rendered_personnel_df <- reactive({
+    filter(MOD_LOSSES_DF,
+           between(date, 
+                   input$personnel_date_range[1],
+                   input$personnel_date_range[2])
+    )
+  })
+  
+  output$personnel_plot <- renderPlot({
+    rendered_personnel_df() |> 
+        calculate_weekly_losses(format_loss_col = FALSE) |> 
+        weekly_personnel_plot()
+  })
+  
+  output$DateRange <- renderText({
+    # make sure end date later than start date
+    validate(
+      need(input$dates[2] > input$dates[1], "end date is earlier than start date"
+      )
+    )
+  })
   
 }

@@ -26,9 +26,11 @@ body <- dashboardBody(
       tabName = "personnel",
       fluidRow(
         box(
-          tags$div(
-            tags$i(class = "fa-solid fa-person-digging", style = "font-size:6rem"),
-            tags$span("Under Construction!"),
+          dateRangeInput(
+            inputId = "personnel_date_range", 
+            label = "Date range:",
+            start = "2022-02-24",
+            min = "2022-02-24"
           ),
           width = 6
         ),
