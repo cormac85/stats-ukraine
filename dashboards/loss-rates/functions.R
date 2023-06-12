@@ -45,10 +45,7 @@ create_downloadable_table <- function(df){
   dt
 }
 
-calculate_weekly_losses <- function(df, format_loss_col = TRUE) {
-  # takes the losses data and calculates a weekly summary
-  DAY_NUMBER_COL = "day"
-  
+enrich_daily_losses <- function(df) {
   df$reverse_week_numbers <- 
     df |>
     pull(day) |> 
@@ -64,6 +61,25 @@ calculate_weekly_losses <- function(df, format_loss_col = TRUE) {
     ceiling() |>
     as.integer()
   
+  # Add moving averages
+  df <-
+    df |> 
+    arrange(date) |> 
+    mutate(
+      across(
+        ends_with("diff"),
+        ~ rollapply(.x, 7, mean, align = "right", fill = NA, partial=TRUE),
+        .names = "{.col}_7_day_moving_average"
+      )
+    ) |> 
+    mutate(
+      across(
+        ends_with("diff"),
+        ~ rollapply(.x, 30, mean, align = "right", fill = NA, partial=TRUE),
+        .names = "{.col}_30_day_moving_average"
+      )
+    )
+  
   df <-
     df |> 
     group_by(reverse_week_numbers) |> 
@@ -73,9 +89,34 @@ calculate_weekly_losses <- function(df, format_loss_col = TRUE) {
     mutate(week_start_date = min(date)) |> 
     dplyr::ungroup()
   
+  df
+}
+
+
+add_styling_to_weekly_losses <- function(losses_for_styling_df) {
   
+  # Black magic that adds a "+" to the values in a the column if they're
+  # greater than 0
+  
+  CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME)
+  
+  losses_for_styling_df <-
+    losses_for_styling_df |> 
+    mutate(
+      {{CURRENT_WEEK_LOSS_COL_NAME}} := ifelse(
+        !! CURRENT_WEEK_LOSS_COL_NAME_SYM > 0,
+        paste0("+", !! CURRENT_WEEK_LOSS_COL_NAME_SYM),
+        !! CURRENT_WEEK_LOSS_COL_NAME_SYM
+      )
+    )
+  
+  losses_for_styling_df
+}
+
+calculate_weekly_losses <- function(df_enriched) {
+  # takes the losses data and calculates a weekly summary
   reverse_weekly_losses_summary <-
-    df |> 
+    df_enriched |> 
     group_by(reverse_week_start_date) |> 
     summarise(across(-ends_with("diff"), max)) |> 
     tidyr::pivot_longer(
@@ -91,7 +132,7 @@ calculate_weekly_losses <- function(df, format_loss_col = TRUE) {
   reverse_weekly_losses_summary <-
     reverse_weekly_losses_summary |> 
     left_join(
-      df |> 
+      df_enriched |> 
         group_by(reverse_week_start_date) |> 
         summarise(across(ends_with("diff"), sum)) |> 
         rename_with(\(x) gsub("_diff", "", x, fixed = TRUE)) |> 
@@ -108,30 +149,14 @@ calculate_weekly_losses <- function(df, format_loss_col = TRUE) {
       )
     )
   
-  # Black magic that adds a "+" to the values in a the column if they're
-  # greater than 0
-  if (format_loss_col) {
-    CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME)
-    
-    reverse_weekly_losses_summary <-
-      reverse_weekly_losses_summary |> 
-      mutate(
-        {{CURRENT_WEEK_LOSS_COL_NAME}} := ifelse(
-          !! CURRENT_WEEK_LOSS_COL_NAME_SYM > 0,
-          paste0("+", !! CURRENT_WEEK_LOSS_COL_NAME_SYM),
-          !! CURRENT_WEEK_LOSS_COL_NAME_SYM
-        )
-      )
-  }
-  
-  reverse_weekly_losses_summary
+  reverse_weekly_losses_summary |> tidyr::drop_na()
 }
-
 
 weekly_personnel_plot <- function(df) {
   personnel_df <- df |> filter(loss_type == "personnel")
   
-  personnel_df |> 
+  personnel_df <- 
+    personnel_df |> 
     mutate(across(where(is.numeric), ~ replace_na(., 0)))
   
   rate_plot <- 

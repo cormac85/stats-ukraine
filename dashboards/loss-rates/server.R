@@ -30,8 +30,9 @@ server <- function(input, output, session) {
   
   output$personnel_plot <- renderPlot({
     rendered_personnel_df() |> 
-        calculate_weekly_losses(format_loss_col = FALSE) |> 
-        weekly_personnel_plot()
+      enrich_daily_losses() |> 
+      calculate_weekly_losses() |> 
+      weekly_personnel_plot()
   })
   
   output$DateRange <- renderText({
