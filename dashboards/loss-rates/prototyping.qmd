@@ -1,9 +1,11 @@
 ```{r}
 library(dplyr)
 library(ggplot2)
+library(zoo)
 
 source(file.path(here::here(), "dashboards", "loss-rates", "functions.R"))
 source(file.path(here::here(), "theme.R"))
+source(file.path(here::here(), "dashboards", "loss-rates", "global.R"))
 
 
 losses_df <- readr::read_rds(
@@ -16,65 +18,106 @@ losses_df
 ```
 
 ```{r}
-# calculate_weekly_losses <- function(df) {
-#   DAY_NUMBER_COL = "day"
-#   
-#   df$reverse_week_numbers <- 
-#     df |>
-#     pull(day) |> 
-#     (\(x) x / 7)() |>
-#     ceiling() |>
-#     as.integer() |>
-#     rev()
-#   
-#   df$week_numbers <- 
-#     df |>
-#     pull(day) |> 
-#     (\(x) x / 7)() |>
-#     ceiling() |>
-#     as.integer()
-#   
-#   df <-
-#     df |> 
-#     group_by(reverse_week_numbers) |> 
-#     mutate(reverse_week_start_date = min(date)) |> 
-#     dplyr::ungroup() |> 
-#     group_by(week_numbers) |> 
-#     mutate(week_start_date = min(date)) |> 
-#     dplyr::ungroup()
-#   
-#     
-#   reverse_weekly_losses_summary <-
-#     df |> 
-#     group_by(reverse_week_start_date) |> 
-#     summarise(across(-ends_with("diff"), max)) |> 
-#     tidyr::pivot_longer(
-#       cols = -c("date", 
-#                 "day",
-#                 "reverse_week_numbers",
-#                 "reverse_week_start_date",
-#                 "week_start_date",
-#                 "week_numbers"),
-#       names_to = "loss_type", values_to = "total_loss"
-#     )
-#   print(nrow(reverse_weekly_losses_summary))
-#   reverse_weekly_losses_summary <-
-#     reverse_weekly_losses_summary |> 
-#     left_join(
-#       df |> 
-#       group_by(reverse_week_start_date) |> 
-#       summarise(across(ends_with("diff"), sum)) |> 
-#       rename_with(\(x) gsub("_diff", "", x, fixed = TRUE)) |> 
-#       tidyr::pivot_longer(
-#         cols = -c("reverse_week_start_date"),
-#         names_to = "loss_type", values_to = "weekly_loss"
-#       ),
-#       by = c("reverse_week_start_date", "loss_type")
-#     ) |> 
-#     select(reverse_week_start_date, date, loss_type, total_loss, weekly_loss)
-#   print(nrow(reverse_weekly_losses_summary))
-#   reverse_weekly_losses_summary
-# }
+calculate_weekly_losses <- function(df, format_loss_col = TRUE) {
+  # takes the losses data and calculates a weekly summary
+  DAY_NUMBER_COL = "day"
+  
+  df$reverse_week_numbers <- 
+    df |>
+    pull(day) |> 
+    (\(x) x / 7)() |>
+    ceiling() |>
+    as.integer() |>
+    rev()
+  
+  df$week_numbers <- 
+    df |>
+    pull(day) |> 
+    (\(x) x / 7)() |>
+    ceiling() |>
+    as.integer()
+  
+  # Add moving averages
+  df <-
+    df |> 
+    arrange(date) |> 
+    mutate(
+      across(
+        ends_with("diff"),
+        ~ rollapply(.x, 7, mean, align = "right", fill = NA, partial=TRUE),
+        .names = "{.col}_7_day_moving_average"
+        )
+    ) |> 
+    mutate(
+      across(
+        ends_with("diff"),
+        ~ rollapply(.x, 30, mean, align = "right", fill = NA, partial=TRUE),
+        .names = "{.col}_30_day_moving_average"
+        )
+    )
+  
+  df <-
+    df |> 
+    group_by(reverse_week_numbers) |> 
+    mutate(reverse_week_start_date = min(date)) |> 
+    dplyr::ungroup() |> 
+    group_by(week_numbers) |> 
+    mutate(week_start_date = min(date)) |> 
+    dplyr::ungroup()
+  
+  
+  reverse_weekly_losses_summary <-
+    df |> 
+    group_by(reverse_week_start_date) |> 
+    summarise(across(-ends_with("diff"), max)) |> 
+    tidyr::pivot_longer(
+      cols = -c("date", 
+                "day",
+                "reverse_week_numbers",
+                "reverse_week_start_date",
+                "week_start_date",
+                "week_numbers"),
+      names_to = "loss_type", values_to = TOTAL_LOSS_COL_NAME
+    )
+  
+  reverse_weekly_losses_summary <-
+    reverse_weekly_losses_summary |> 
+    left_join(
+      df |> 
+        group_by(reverse_week_start_date) |> 
+        summarise(across(ends_with("diff"), sum)) |> 
+        rename_with(\(x) gsub("_diff", "", x, fixed = TRUE)) |> 
+        tidyr::pivot_longer(
+          cols = -c("reverse_week_start_date"),
+          names_to = "loss_type", values_to = CURRENT_WEEK_LOSS_COL_NAME
+        ),
+      by = c("reverse_week_start_date", "loss_type")
+    ) |> 
+    select(
+      one_of(
+        c("reverse_week_start_date", "date", "loss_type",
+          TOTAL_LOSS_COL_NAME, CURRENT_WEEK_LOSS_COL_NAME)
+      )
+    )
+  
+  # Black magic that adds a "+" to the values in a the column if they're
+  # greater than 0
+  if (format_loss_col) {
+    CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME)
+    
+    reverse_weekly_losses_summary <-
+      reverse_weekly_losses_summary |> 
+      mutate(
+        {{CURRENT_WEEK_LOSS_COL_NAME}} := ifelse(
+          !! CURRENT_WEEK_LOSS_COL_NAME_SYM > 0,
+          paste0("+", !! CURRENT_WEEK_LOSS_COL_NAME_SYM),
+          !! CURRENT_WEEK_LOSS_COL_NAME_SYM
+        )
+      )
+  }
+  
+  reverse_weekly_losses_summary
+}
 
 weekly_losses_df = calculate_weekly_losses(losses_df, format_loss_col = FALSE)
 

@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(zoo)
 
 create_downloadable_table <- function(df){
   dt <- DT::datatable(
