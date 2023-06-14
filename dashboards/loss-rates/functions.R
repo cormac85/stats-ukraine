@@ -13,12 +13,6 @@ create_downloadable_table <- function(df){
       autoWidth = FALSE,
       scrollX=TRUE,
       buttons = list(
-        # list(
-        #   extend = "csv",
-        #   text = "Download CSV",
-        #   filename = "data",
-        #   exportOptions = list(modifier = list(page = "all"))
-        # ),
         list(
           extend = "excel",
           text = "Download Excel",
