@@ -16,7 +16,11 @@ body <- dashboardBody(
       fluidRow(
         infoBoxOutput("overview_date", width = 12),
         box(
-          DT::dataTableOutput('overview_table'), width = 12
+          DT::dataTableOutput('overview_table'), width = 6
+        ),
+        box(
+          shiny::plotOutput("all_loss_types_moving_average_plot", height=800),
+          width = 6
         )
       )
     ),

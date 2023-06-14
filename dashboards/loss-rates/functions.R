@@ -148,6 +148,32 @@ calculate_weekly_losses <- function(df_enriched) {
   reverse_weekly_losses_summary |> tidyr::drop_na()
 }
 
+
+reshape_moving_averages <- function(losses_enriched_df) {
+  losses_enriched_long_df <- 
+    losses_enriched_df |> 
+    select(date, day, week_numbers, contains("moving_average")) |> 
+    pivot_longer(
+      cols = contains("moving_average"),
+      names_to="loss_type",
+      values_to = "loss_count"
+    ) |> 
+    mutate(window_length = case_when(stringr::str_detect(loss_type, "7") ~ 7,
+                                     stringr::str_detect(loss_type, "30") ~ 30)) |> 
+    mutate(window_type = case_when(
+      stringr::str_detect(loss_type, "moving_average") ~ "moving_average"
+    )) |> 
+    separate_wider_delim(loss_type, delim = "_diff_", names = c("loss_type", "window_info")) |> 
+    select(-window_info)
+  
+  losses_enriched_long_df |> 
+    select(day, date, week_numbers, loss_type, window_type, window_length, loss_count)  
+}
+
+
+#########
+# Plots #
+#########
 weekly_personnel_plot <- function(df) {
   personnel_df <- df |> filter(loss_type == "personnel")
   
@@ -165,4 +191,26 @@ weekly_personnel_plot <- function(df) {
          y="Personnell Loss")
   
   rate_plot
+}
+
+
+plot_all_loss_moving_average <- function(df, window_len) {
+  df |> 
+    filter(window_length == window_len, window_type == "moving_average") |> 
+    ggplot(
+      aes(date, 
+          loss_count, 
+          colour = as.character(window_length))
+    ) +
+    geom_bar(stat = "identity") +
+    facet_wrap(c("loss_type"), scales = "free_y", ncol = 1) +
+    ukraine_plot_theme() +
+    theme(legend.position = "none") +
+    labs(
+      title = paste0(
+        window_len, 
+        "-Day Moving Average of Daily Russian Losses"
+      )
+    ) +
+    scale_color_manual(values=purrr::map_chr(unname(ukraine_palette), \(x) x))  
 }

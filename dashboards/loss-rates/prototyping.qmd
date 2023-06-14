@@ -188,19 +188,28 @@ moving_averages_df
 ```
 
 ```{r}
-moving_averages_df |> 
-  filter(window_length == 7, window_type == "moving_average") |> 
-  ggplot(
-    aes(date, 
-        loss_count, 
-        colour = as.character(window_length))
+
+plot_all_loss_moving_average <- function(df, window_len) {
+  df |> 
+    filter(window_length == window_len, window_type == "moving_average") |> 
+    ggplot(
+      aes(date, 
+          loss_count, 
+          colour = as.character(window_length))
+      ) +
+    geom_bar(stat = "identity") +
+    facet_wrap(c("loss_type"), scales = "free_y", ncol = 1) +
+    ukraine_plot_theme() +
+    theme(legend.position = "none") +
+    labs(
+      title = paste0(
+        window_len, 
+        "-Day Moving Average of Daily Russian Losses"
+        )
     ) +
-  geom_bar(stat = "identity") +
-  facet_wrap(c("loss_type"), scales = "free_y", ncol = 1) +
-  ukraine_plot_theme() +
-  theme(legend.position = "none") +
-  labs(title = "7-Day Moving Average of Daily Russian Losses") +
-  scale_color_manual(values=purrr::map_chr(unname(ukraine_palette), \(x) x))
-  
+    scale_color_manual(values=purrr::map_chr(unname(ukraine_palette), \(x) x))  
+}
+
+plot_all_loss_moving_average(moving_averages_df, window_len = 30)
 ggsave("moving_average_plot.png", width = 7, height = 14)
 ```
