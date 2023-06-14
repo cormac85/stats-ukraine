@@ -5,6 +5,7 @@
 # If you had multiple tabs, you could split those into their own
 # components as well.
 ###################
+
 body <- dashboardBody(
   includeCSS(HEADER_STYLE_FILE_PATH),
   includeCSS(SIDEBAR_STYLE_FILE_PATH),
@@ -14,7 +15,18 @@ body <- dashboardBody(
     tabItem(
       tabName = "overview",
       fluidRow(
-        infoBoxOutput("overview_date", width = 12),
+        infoBoxOutput("overview_date", width = 6),
+        box(    
+          shinyWidgets::pickerInput(
+            inputId = "loss_type_input",
+            label = "Select Loss Type",
+            choices = unique(OVERVIEW_LOSSES_DF$loss_type),
+            multiple = TRUE,
+            options = list(`actions-box` = TRUE)
+          ),
+          height = 90)
+      ),
+      fluidPage(
         column(
           width=6,
           box(
@@ -49,7 +61,7 @@ body <- dashboardBody(
           width = 6
         ),
         box(
-          plotOutput("personnel_plot"),
+          plotly::plotlyOutput("personnel_plot"),
           width = 12
         )
       )

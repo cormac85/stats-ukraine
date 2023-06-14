@@ -3,6 +3,8 @@ server <- function(input, output, session) {
   ################
   # Loss Summary #
   ###############
+  
+  # Table
   output$overview_table <- DT::renderDataTable(
     OVERVIEW_LOSSES_DF |> 
       filter(reverse_week_start_date == max(reverse_week_start_date)) |> 
@@ -18,10 +20,14 @@ server <- function(input, output, session) {
     )
   })
   
+  # All Loss Summary Plot
+  selected_loss_types <- reactive({input$loss_type_input})
+
   output$all_loss_types_moving_average_plot <- shiny::renderPlot({
     MOD_LOSSES_DF |> 
       enrich_daily_losses() |> 
       reshape_moving_averages() |> 
+      filter(loss_type %in% selected_loss_types()) |> 
       map_loss_types_for_display() |> 
       plot_all_loss_moving_average(window_len = 7)
   })
@@ -41,7 +47,7 @@ server <- function(input, output, session) {
     )
   })
   
-  output$personnel_plot <- renderPlot({
+  output$personnel_plot <- plotly::renderPlotly({
     rendered_personnel_df() |> 
       enrich_daily_losses() |> 
       calculate_weekly_losses() |> 

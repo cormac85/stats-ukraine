@@ -218,12 +218,12 @@ weekly_personnel_plot <- function(df) {
          x = "Week End Date",
          y="Personnell Loss")
   
-  rate_plot
+  plotly::ggplotly(rate_plot)
 }
 
 
 plot_all_loss_moving_average <- function(df, window_len) {
-  df |> 
+  viz <- df |> 
     filter(window_length == window_len, window_type == "moving_average") |> 
     ggplot(
       aes(date, 
@@ -243,4 +243,6 @@ plot_all_loss_moving_average <- function(df, window_len) {
       )
     ) +
     scale_color_manual(values=purrr::map_chr(unname(ukraine_palette), \(x) x))  
+  
+  viz
 }
