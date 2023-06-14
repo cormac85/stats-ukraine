@@ -5,7 +5,6 @@
 # If you had multiple tabs, you could split those into their own
 # components as well.
 ###################
-print("Body")
 body <- dashboardBody(
   includeCSS(HEADER_STYLE_FILE_PATH),
   includeCSS(SIDEBAR_STYLE_FILE_PATH),

@@ -1,16 +1,14 @@
 server <- function(input, output, session) {
   
-  output$raw_table <- DT::renderDataTable(
-    MOD_LOSSES_DF |> 
-      janitor::clean_names(case = "title") |> 
-      create_downloadable_table()
-  )
-  
+  ################
+  # Loss Summary #
+  ###############
   output$overview_table <- DT::renderDataTable(
     OVERVIEW_LOSSES_DF |> 
       filter(reverse_week_start_date == max(reverse_week_start_date)) |> 
       select(-reverse_week_start_date, -date) |> 
       janitor::clean_names(case = "title") |> 
+      add_styling_to_weekly_losses() |> 
       create_downloadable_table()
   )
   
@@ -20,11 +18,18 @@ server <- function(input, output, session) {
     )
   })
   
+  
+  #############
+  # Personnel #
+  #############
   rendered_personnel_df <- reactive({
-    filter(MOD_LOSSES_DF,
-           between(date, 
-                   input$personnel_date_range[1],
-                   input$personnel_date_range[2])
+    filter(
+      MOD_LOSSES_DF,
+      between(
+        date, 
+        input$personnel_date_range[1],
+        input$personnel_date_range[2]
+      )
     )
   })
   
@@ -42,5 +47,15 @@ server <- function(input, output, session) {
       )
     )
   })
+  
+  
+  ############
+  # Raw Data #
+  ############
+  output$raw_table <- DT::renderDataTable(
+    MOD_LOSSES_DF |> 
+      janitor::clean_names(case = "title") |> 
+      create_downloadable_table()
+  )
   
 }

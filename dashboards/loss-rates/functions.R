@@ -88,16 +88,17 @@ enrich_daily_losses <- function(df) {
 
 
 add_styling_to_weekly_losses <- function(losses_for_styling_df) {
-  
   # Black magic that adds a "+" to the values in a the column if they're
   # greater than 0
-  
-  CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME)
+  current_week_loss_display_name <- snakecase::to_title_case(
+    CURRENT_WEEK_LOSS_COL_NAME
+  )
+  CURRENT_WEEK_LOSS_COL_NAME_SYM <- rlang::ensym(current_week_loss_display_name)
   
   losses_for_styling_df <-
     losses_for_styling_df |> 
     mutate(
-      {{CURRENT_WEEK_LOSS_COL_NAME}} := ifelse(
+      {{current_week_loss_display_name}} := ifelse(
         !! CURRENT_WEEK_LOSS_COL_NAME_SYM > 0,
         paste0("+", !! CURRENT_WEEK_LOSS_COL_NAME_SYM),
         !! CURRENT_WEEK_LOSS_COL_NAME_SYM
@@ -106,6 +107,7 @@ add_styling_to_weekly_losses <- function(losses_for_styling_df) {
   
   losses_for_styling_df
 }
+
 
 calculate_weekly_losses <- function(df_enriched) {
   # takes the losses data and calculates a weekly summary

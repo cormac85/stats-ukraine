@@ -3,7 +3,6 @@
 # 
 # Create the sidebar menu options for the ui.
 ###################
-print("sidebar")
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Loss Summary", tabName = "overview", icon = icon("square-poll-vertical")),
