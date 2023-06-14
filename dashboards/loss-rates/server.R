@@ -18,12 +18,13 @@ server <- function(input, output, session) {
     )
   })
   
-  output$all_loss_types_moving_average_plot <- shiny::renderPlot(
+  output$all_loss_types_moving_average_plot <- shiny::renderPlot({
     MOD_LOSSES_DF |> 
       enrich_daily_losses() |> 
       reshape_moving_averages() |> 
+      map_loss_types_for_display() |> 
       plot_all_loss_moving_average(window_len = 7)
-  )
+  })
   
   
   #############

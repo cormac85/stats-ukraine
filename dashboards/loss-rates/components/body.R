@@ -15,12 +15,23 @@ body <- dashboardBody(
       tabName = "overview",
       fluidRow(
         infoBoxOutput("overview_date", width = 12),
-        box(
-          DT::dataTableOutput('overview_table'), width = 6
+        column(
+          width=6,
+          box(
+            DT::dataTableOutput('overview_table'), 
+            width = 12, 
+            height = SUMMARY_PAGE_BOX_HEIGHT + 23
+          )
         ),
-        box(
-          shiny::plotOutput("all_loss_types_moving_average_plot", height=800),
-          width = 6
+        column(
+          width=6,
+          box(
+            shiny::plotOutput(
+              "all_loss_types_moving_average_plot",
+              height=SUMMARY_PAGE_BOX_HEIGHT
+            ),
+            width = 12
+          )
         )
       )
     ),
@@ -76,8 +87,8 @@ body <- dashboardBody(
               "mod_data_link", 
               "Petro Ivaniuk",
               onclick ="window.open('https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset', '_blank')")
-            ),
-            width = 12
+          ),
+          width = 12
         )
       )
     )

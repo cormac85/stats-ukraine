@@ -171,6 +171,34 @@ reshape_moving_averages <- function(losses_enriched_df) {
 }
 
 
+map_loss_types_for_display <- function(loss_types_df) {
+  loss_types_map <- dplyr::tribble(
+    ~loss_type,               ~loss_types_display,
+    "aircraft",                "Fixed Wing Aircraft",
+    "apc",                     "Armoured Personnel Vehicle",
+    "anti_aircraft_warfare",   "AA Warfare Systems",
+    "cruise_missiles",         "Cruise Missiles",
+    "drone",                   "UAV",
+    "field_artillery",         "Artillery Systems",
+    "helicopter",              "Helicopters",
+    "mrl",                     "MLRS",
+    "naval_ship",              "Warships / Boats",
+    "personnel",               "Personnel",
+    "special_equipment",       "Special Equipment",
+    "tank",                    "Tanks",
+    "vehicles_and_fuel_tanks", "Trucks & Fuel Tanks",
+  )
+  
+  dplyr::left_join(
+    loss_types_df,
+    loss_types_map,
+    by="loss_type"
+  ) |> 
+    mutate(loss_type = loss_types_display) |> 
+    select(-loss_types_display)
+}
+
+
 #########
 # Plots #
 #########
@@ -205,11 +233,13 @@ plot_all_loss_moving_average <- function(df, window_len) {
     geom_bar(stat = "identity") +
     facet_wrap(c("loss_type"), scales = "free_y", ncol = 1) +
     ukraine_plot_theme() +
-    theme(legend.position = "none") +
+    theme(legend.position = "none",
+          axis.text.y = element_text(size=rel(1.2)),
+          plot.title = element_text(size=rel(1.4), face = "bold")) +
     labs(
       title = paste0(
         window_len, 
-        "-Day Moving Average of Daily Russian Losses"
+        "-Day Moving Average of\nDaily Russian Losses"
       )
     ) +
     scale_color_manual(values=purrr::map_chr(unname(ukraine_palette), \(x) x))  

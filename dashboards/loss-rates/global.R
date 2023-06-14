@@ -18,6 +18,7 @@ source(file.path(here::here(), "theme.R"))
 
 # CSS
 LOGO_WIDTH_PX = 250
+SUMMARY_PAGE_BOX_HEIGHT = 800
 
 # Data Import
 MOD_LOSSES_FILE = "mod_losses.rds"
