@@ -62,14 +62,14 @@ enrich_daily_losses <- function(df) {
     mutate(
       across(
         ends_with("diff"),
-        ~ rollapply(.x, 7, mean, align = "right", fill = NA, partial=TRUE),
+        ~ rollapply(.x, 7, mean, align = "right", fill = NA, na.rm = TRUE, partial=TRUE),
         .names = "{.col}_7_day_moving_average"
       )
     ) |> 
     mutate(
       across(
         ends_with("diff"),
-        ~ rollapply(.x, 30, mean, align = "right", fill = NA, partial=TRUE),
+        ~ rollapply(.x, 30, mean, align = "right", fill = NA, na.rm = TRUE, partial=TRUE),
         .names = "{.col}_30_day_moving_average"
       )
     )
@@ -202,22 +202,25 @@ map_loss_types_for_display <- function(loss_types_df) {
 #########
 # Plots #
 #########
-weekly_personnel_plot <- function(df) {
-  personnel_df <- df |> filter(loss_type == "personnel")
-  
-  personnel_df <- 
-    personnel_df |> 
-    mutate(across(where(is.numeric), ~ replace_na(., 0)))
+daily_moving_average_personnel_plot <- function(df) {
   
   rate_plot <- 
-    personnel_df |> 
-    ggplot(aes(date, !! rlang::ensym(CURRENT_WEEK_LOSS_COL_NAME), group=1)) +
-    geom_line(colour = ukraine_palette$ukraine_blue_dark) +
-    ukraine_plot_theme() +
-    labs(title = "RAF Personnel Weekly Loss Rate",
-         x = "Week End Date",
-         y="Personnell Loss")
-  
+    df |> 
+      select(
+        date, personnel_diff, personnel_diff_30_day_moving_average, week_start_date
+      ) |> 
+      tidyr::drop_na() |> 
+      ggplot(aes(date, personnel_diff)) +
+      geom_col(width=1,
+               fill = ukraine_palette$ukraine_blue, alpha = 0.15) +
+      geom_line(aes(date, personnel_diff_30_day_moving_average, group = 1),
+                colour = ukraine_palette$ukraine_yellow_darkened) +
+      ukraine_plot_theme() +
+      theme(plot.title = element_text(size = 15)) +
+      labs(title = "Daily Liquidated Personnel\n& 30 Day Moving Average",
+           x = "Date",
+           y = "Liquidated Personnel")
+    
   plotly::ggplotly(rate_plot)
 }
 

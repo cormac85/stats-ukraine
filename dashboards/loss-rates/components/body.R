@@ -14,21 +14,10 @@ body <- dashboardBody(
     
     tabItem(
       tabName = "overview",
-      fluidRow(
-        infoBoxOutput("overview_date", width = 6),
-        box(    
-          shinyWidgets::pickerInput(
-            inputId = "loss_type_input",
-            label = "Select Loss Type",
-            choices = unique(OVERVIEW_LOSSES_DF$loss_type),
-            multiple = TRUE,
-            options = list(`actions-box` = TRUE)
-          ),
-          height = 90)
-      ),
       fluidPage(
         column(
           width=6,
+          infoBoxOutput("overview_date", width = 12),
           box(
             DT::dataTableOutput('overview_table'), 
             width = 12, 
@@ -37,6 +26,16 @@ body <- dashboardBody(
         ),
         column(
           width=6,
+          box(    
+            shinyWidgets::pickerInput(
+              inputId = "loss_type_input",
+              label = "Select Loss Type",
+              choices = unique(OVERVIEW_LOSSES_DF$loss_type),
+              multiple = TRUE,
+              options = list(`actions-box` = TRUE)
+            ),
+            height = 90
+          ),
           box(
             shiny::plotOutput(
               "all_loss_types_moving_average_plot",

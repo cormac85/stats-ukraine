@@ -50,8 +50,7 @@ server <- function(input, output, session) {
   output$personnel_plot <- plotly::renderPlotly({
     rendered_personnel_df() |> 
       enrich_daily_losses() |> 
-      calculate_weekly_losses() |> 
-      weekly_personnel_plot()
+      daily_moving_average_personnel_plot()
   })
   
   output$DateRange <- renderText({

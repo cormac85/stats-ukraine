@@ -41,14 +41,14 @@ enrich_daily_losses <- function(df) {
     mutate(
       across(
         ends_with("diff"),
-        ~ rollapply(.x, 7, mean, align = "right", fill = NA, partial=TRUE),
+        ~ rollapply(.x, 7, mean, align = "right", fill = NA, na.rm = TRUE, partial=TRUE),
         .names = "{.col}_7_day_moving_average"
         )
     ) |> 
     mutate(
       across(
         ends_with("diff"),
-        ~ rollapply(.x, 30, mean, align = "right", fill = NA, partial=TRUE),
+        ~ rollapply(.x, 30, mean, align = "right", fill = NA, na.rm = TRUE, partial=TRUE),
         .names = "{.col}_30_day_moving_average"
         )
     )
@@ -133,6 +133,25 @@ print(losses_enriched_df)
 
 weekly_losses_df |> 
   add_styling_to_weekly_losses()
+```
+
+```{r}
+
+losses_enriched_df |> 
+  select(
+    date, personnel_diff, personnel_diff_30_day_moving_average, week_start_date
+  ) |> 
+  tidyr::drop_na() |> 
+  ggplot(aes(date, personnel_diff)) +
+  geom_col(width=1,
+           fill = ukraine_palette$ukraine_blue, alpha = 0.15) +
+  geom_line(aes(date, personnel_diff_30_day_moving_average, group = 1),
+            colour = ukraine_palette$ukraine_yellow_darkened) +
+  ukraine_plot_theme() +
+  labs(title = "Daily Liquidated Personnel & 30 Day Moving Average",
+       x = "Date",
+       y = "Liquidated Personnel")
+  
 ```
 
 ```{r}
