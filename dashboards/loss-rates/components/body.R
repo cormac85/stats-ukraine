@@ -15,34 +15,37 @@ body <- dashboardBody(
     tabItem(
       tabName = "overview",
       fluidPage(
-        column(
-          width=6,
-          infoBoxOutput("overview_date", width = 12),
-          box(
-            DT::dataTableOutput('overview_table'), 
-            width = 12, 
-            height = SUMMARY_PAGE_BOX_HEIGHT + 23
-          )
-        ),
-        column(
-          width=6,
-          box(    
-            shinyWidgets::pickerInput(
-              inputId = "loss_type_input",
-              label = "Select Loss Type",
-              choices = unique(OVERVIEW_LOSSES_DF$loss_type),
-              multiple = TRUE,
-              options = list(`actions-box` = TRUE)
-            ),
-            height = 90
+        width=12,
+        box(    
+          shinyWidgets::pickerInput(
+            inputId = "loss_type_input",
+            label = "Select Loss Type",
+            choices = unique(OVERVIEW_LOSSES_DF$loss_type),
+            multiple = TRUE,
+            options = list(`actions-box` = TRUE)
           ),
-          box(
-            shiny::plotOutput(
-              "all_loss_types_moving_average_plot",
-              height=SUMMARY_PAGE_BOX_HEIGHT
-            ),
-            width = 12
-          )
+          height = 90
+        ),
+        box(
+          shiny::plotOutput(
+            "all_loss_types_moving_average_plot",
+            height=SUMMARY_PAGE_BOX_HEIGHT
+          ),
+          width = 12
+          
+        )
+      )
+    ),
+    
+    tabItem(
+      tabName = "current_week",
+      fluidPage(
+        width=12,
+        infoBoxOutput("overview_date", width = 12),
+        box(
+          DT::dataTableOutput('overview_table'), 
+          width = 12, 
+          height = SUMMARY_PAGE_BOX_HEIGHT + 23
         )
       )
     ),

@@ -214,7 +214,8 @@ daily_moving_average_personnel_plot <- function(df) {
       geom_col(width=1,
                fill = ukraine_palette$ukraine_blue, alpha = 0.15) +
       geom_line(aes(date, personnel_diff_30_day_moving_average, group = 1),
-                colour = ukraine_palette$ukraine_yellow_darkened) +
+                colour = ukraine_palette$ukraine_yellow_darkened,
+                size = 0.9) +
       ukraine_plot_theme() +
       theme(plot.title = element_text(size = 15)) +
       labs(title = "Daily Liquidated Personnel\n& 30 Day Moving Average",
@@ -228,22 +229,31 @@ daily_moving_average_personnel_plot <- function(df) {
 plot_all_loss_moving_average <- function(df, window_len) {
   viz <- df |> 
     filter(window_length == window_len, window_type == "moving_average") |> 
-    ggplot(
-      aes(date, 
-          loss_count, 
-          colour = as.character(window_length))
-    ) +
-    geom_bar(stat = "identity") +
+    ggplot(aes(date, loss_count)) +
+    geom_bar(stat = "identity", 
+             width = 1, 
+             fill = ukraine_palette$ukraine_blue_dark,
+             colour = ukraine_palette$ukraine_blue_dark,) +
     facet_wrap(c("loss_type"), scales = "free_y", ncol = 1) +
     ukraine_plot_theme() +
-    theme(legend.position = "none",
-          axis.text.y = element_text(size=rel(1.2)),
-          plot.title = element_text(size=rel(1.4), face = "bold")) +
+    theme(
+      legend.position = "none",
+      axis.text.y = element_text(size=rel(1.2)),
+      plot.title = element_text(size=rel(1.4), face = "bold"),
+      plot.subtitle = element_text(
+        face = "bold",
+        size = rel(1.2),
+        colour = ukraine_palette$ukraine_yellow_very_dark
+      )
+    ) +
     labs(
       title = paste0(
         window_len, 
         "-Day Moving Average of\nDaily Russian Losses"
-      )
+      ),
+      subtitle = "Note: y-axis scale is different betwee sub-plots",
+      x = "Date",
+      y = "Loss Count"
     ) +
     scale_color_manual(values=purrr::map_chr(unname(ukraine_palette), \(x) x))  
   
