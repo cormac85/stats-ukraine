@@ -73,10 +73,17 @@ body <- dashboardBody(
       tabName = "equipment",
       fluidRow(
         box(
-          tags$div(
-            tags$i(class = "fa-solid fa-person", style = "font-size:6rem"),
-            tags$span("Under Construction!")
-          )
+          dateRangeInput(
+            inputId = "equipment_date_range", 
+            label = "Date range:",
+            start = "2022-02-24",
+            min = "2022-02-24"
+          ),
+          width = 6
+        ),
+        box(
+          plotly::plotlyOutput("equipment_plot"),
+          width = 12
         )
       )
     ),

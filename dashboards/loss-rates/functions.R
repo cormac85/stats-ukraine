@@ -215,7 +215,7 @@ daily_moving_average_personnel_plot <- function(df) {
                fill = ukraine_palette$ukraine_blue, alpha = 0.15) +
       geom_line(aes(date, personnel_diff_30_day_moving_average, group = 1),
                 colour = ukraine_palette$ukraine_yellow_darkened,
-                size = 0.9) +
+                linewidth = 0.9) +
       ukraine_plot_theme() +
       theme(plot.title = element_text(size = 15)) +
       labs(title = "Daily Liquidated Personnel\n& 30 Day Moving Average",
@@ -251,7 +251,7 @@ plot_all_loss_moving_average <- function(df, window_len) {
         window_len, 
         "-Day Moving Average of\nDaily Russian Losses"
       ),
-      subtitle = "Note: y-axis scale is different betwee sub-plots",
+      subtitle = "Note: y-axis scale is different between sub-plots",
       x = "Date",
       y = "Loss Count"
     ) +

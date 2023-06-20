@@ -62,6 +62,27 @@ server <- function(input, output, session) {
   })
   
   
+  #############
+  # Equipment #
+  #############
+  rendered_equipment_df <- reactive({
+    MOD_LOSSES_DF |> 
+      filter(
+        between(
+          date,
+          input$equipment_date_range[1],
+          input$equipment_date_range[2]
+        ),
+        
+      )
+  })
+  
+  output$equipment_plot <- plotly::renderPlotly({
+    rendered_equipment_df() |> 
+      enrich_daily_losses() |> 
+      daily_moving_average_personnel_plot()
+  })
+  
   ############
   # Raw Data #
   ############
