@@ -66,14 +66,20 @@ server <- function(input, output, session) {
   # Equipment #
   #############
   rendered_equipment_df <- reactive({
+    current_loss_type <- LOSS_TYPE_MAP[
+      LOSS_TYPE_MAP$loss_type_display == input$equipment_loss_type,
+    ]$loss_type
+    
     MOD_LOSSES_DF |> 
       filter(
         between(
           date,
           input$equipment_date_range[1],
           input$equipment_date_range[2]
-        ),
-        
+        )
+      ) |> 
+      select(
+        c("date", "day", current_loss_type, paste0(current_loss_type, "_diff"))
       )
   })
   

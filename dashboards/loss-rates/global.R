@@ -37,3 +37,20 @@ OVERVIEW_LOSSES_DF =
 
 OVERVIEW_DATE = OVERVIEW_LOSSES_DF |> dplyr::pull("date") |> max()
 
+# Lookup
+LOSS_TYPE_MAP <- dplyr::tribble(
+  ~loss_type,               ~loss_type_display,
+  "aircraft",                "Fixed Wing Aircraft",
+  "apc",                     "Armoured Personnel Vehicle",
+  "anti_aircraft_warfare",   "AA Warfare Systems",
+  "cruise_missiles",         "Cruise Missiles",
+  "drone",                   "UAV",
+  "field_artillery",         "Artillery Systems",
+  "helicopter",              "Helicopters",
+  "mrl",                     "MLRS",
+  "naval_ship",              "Warships / Boats",
+  "personnel",               "Personnel",
+  "special_equipment",       "Special Equipment",
+  "tank",                    "Tanks",
+  "vehicles_and_fuel_tanks", "Trucks & Fuel Tanks",
+)

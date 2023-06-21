@@ -79,8 +79,20 @@ body <- dashboardBody(
             start = "2022-02-24",
             min = "2022-02-24"
           ),
-          width = 6
+          width = 6,
+          height = 110
         ),
+        box(    
+          shinyWidgets::pickerInput(
+              inputId = "equipment_loss_type",
+              label = "Equipment Type", 
+              choices = LOSS_TYPE_MAP$loss_type_display
+            )
+          ,
+          height = 110
+        )
+      ),
+      fluidRow(
         box(
           plotly::plotlyOutput("equipment_plot"),
           width = 12

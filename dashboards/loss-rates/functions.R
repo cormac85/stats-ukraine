@@ -172,30 +172,12 @@ reshape_moving_averages <- function(losses_enriched_df) {
 
 
 map_loss_types_for_display <- function(loss_types_df) {
-  loss_types_map <- dplyr::tribble(
-    ~loss_type,               ~loss_types_display,
-    "aircraft",                "Fixed Wing Aircraft",
-    "apc",                     "Armoured Personnel Vehicle",
-    "anti_aircraft_warfare",   "AA Warfare Systems",
-    "cruise_missiles",         "Cruise Missiles",
-    "drone",                   "UAV",
-    "field_artillery",         "Artillery Systems",
-    "helicopter",              "Helicopters",
-    "mrl",                     "MLRS",
-    "naval_ship",              "Warships / Boats",
-    "personnel",               "Personnel",
-    "special_equipment",       "Special Equipment",
-    "tank",                    "Tanks",
-    "vehicles_and_fuel_tanks", "Trucks & Fuel Tanks",
-  )
   
-  dplyr::left_join(
-    loss_types_df,
-    loss_types_map,
-    by="loss_type"
-  ) |> 
-    mutate(loss_type = loss_types_display) |> 
-    select(-loss_types_display)
+  loss_types_df |> 
+    dplyr::left_join(LOSS_TYPE_MAP, by="loss_type") |> 
+    mutate(loss_type = loss_type_display) |> 
+    select(-loss_type_display)
+  
 }
 
 
@@ -218,7 +200,7 @@ daily_moving_average_personnel_plot <- function(df) {
                 linewidth = 0.9) +
       ukraine_plot_theme() +
       theme(plot.title = element_text(size = 15)) +
-      labs(title = "Daily Liquidated Personnel\n& 30 Day Moving Average",
+      labs(title = "Daily Liquidated Personnel & 30 Day Moving Average",
            x = "Date",
            y = "Liquidated Personnel")
     
