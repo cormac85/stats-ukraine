@@ -86,7 +86,9 @@ body <- dashboardBody(
           shinyWidgets::pickerInput(
               inputId = "equipment_loss_type",
               label = "Equipment Type", 
-              choices = LOSS_TYPE_MAP$loss_type_display
+              choices = filter(
+                LOSS_TYPE_MAP, loss_type != "personnel"
+              )$loss_type_display
             )
           ,
           height = 110

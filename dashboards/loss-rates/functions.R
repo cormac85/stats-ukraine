@@ -180,10 +180,59 @@ map_loss_types_for_display <- function(loss_types_df) {
   
 }
 
+look_up_loss_type_for_display <- function(loss_type_str) {
+  LOSS_TYPE_MAP[
+    LOSS_TYPE_MAP$loss_type == loss_type_str,
+  ]$loss_type_display
+}
+
+look_up_loss_type_for_back_end <- function(loss_type_display_str) {
+  LOSS_TYPE_MAP[
+    LOSS_TYPE_MAP$loss_type_display == loss_type_display_str,
+  ]$loss_type
+}
+
 
 #########
 # Plots #
 #########
+daily_moving_average_loss_plot <- function(
+    df, loss_type_str, moving_average_length
+  ) {
+  
+  rate_var <- paste0(loss_type_str, "_diff")
+  
+  moving_average_rate_var <- paste0(
+    rate_var, "_", moving_average_length, "_day_moving_average"
+  )
+  
+  loss_type_display_str <- look_up_loss_type_for_display(loss_type_str)
+  
+  plot_title <- paste(
+    "Daily", 
+    loss_type_display_str, 
+    "Loss &", 
+    moving_average_length, 
+    "Day Moving Average"
+  )
+  
+  rate_plot <- 
+    df |> 
+    tidyr::drop_na() |> 
+    ggplot(aes(x=date, y=.data[[rate_var]])) +
+    geom_col(width=1,
+             fill = ukraine_palette$ukraine_blue, alpha = 0.15) +
+    geom_line(aes(x=date, y=.data[[moving_average_rate_var]], group = 1),
+              colour = ukraine_palette$ukraine_yellow_darkened,
+              linewidth = 0.9) +
+    ukraine_plot_theme() +
+    theme(plot.title = element_text(size = 15)) +
+    labs(title = plot_title, x = "Date", y = loss_type_display_str)
+  
+  plotly::ggplotly(rate_plot)
+}
+
+
 daily_moving_average_personnel_plot <- function(df) {
   
   rate_plot <- 

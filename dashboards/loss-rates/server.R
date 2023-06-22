@@ -66,9 +66,9 @@ server <- function(input, output, session) {
   # Equipment #
   #############
   rendered_equipment_df <- reactive({
-    current_loss_type <- LOSS_TYPE_MAP[
-      LOSS_TYPE_MAP$loss_type_display == input$equipment_loss_type,
-    ]$loss_type
+    current_loss_type <- look_up_loss_type_for_back_end(
+      input$equipment_loss_type
+    )
     
     MOD_LOSSES_DF |> 
       filter(
@@ -83,10 +83,18 @@ server <- function(input, output, session) {
       )
   })
   
+  current_loss_type <- reactive({
+    current_loss_type <- LOSS_TYPE_MAP[
+      LOSS_TYPE_MAP$loss_type_display == input$equipment_loss_type,
+    ]$loss_type
+  })
+  
   output$equipment_plot <- plotly::renderPlotly({
     rendered_equipment_df() |> 
       enrich_daily_losses() |> 
-      daily_moving_average_personnel_plot()
+      daily_moving_average_loss_plot(
+        current_loss_type(), moving_average_length = 7
+      )
   })
   
   ############
