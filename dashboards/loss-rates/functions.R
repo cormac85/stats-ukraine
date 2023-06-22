@@ -257,7 +257,11 @@ daily_moving_average_personnel_plot <- function(df) {
 }
 
 
-plot_all_loss_moving_average <- function(df, window_len) {
+plot_all_loss_moving_average <- function(df, window_len, y_axis_scale) {
+  
+  if (y_axis_scale == "Free") plot_y_scale <- "free_y"
+  if (y_axis_scale == "Fixed") plot_y_scale <- "fixed"
+  
   viz <- df |> 
     filter(window_length == window_len, window_type == "moving_average") |> 
     ggplot(aes(date, loss_count)) +
@@ -265,7 +269,7 @@ plot_all_loss_moving_average <- function(df, window_len) {
              width = 1, 
              fill = ukraine_palette$ukraine_blue_dark,
              colour = ukraine_palette$ukraine_blue_dark,) +
-    facet_wrap(c("loss_type"), scales = "free_y", ncol = 1) +
+    facet_wrap(c("loss_type"), scales = plot_y_scale, ncol = 1) +
     ukraine_plot_theme() +
     theme(
       legend.position = "none",

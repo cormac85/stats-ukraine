@@ -20,9 +20,18 @@ body <- dashboardBody(
           shinyWidgets::pickerInput(
             inputId = "loss_type_input",
             label = "Select Loss Type",
-            choices = unique(OVERVIEW_LOSSES_DF$loss_type),
+            choices = LOSS_TYPE_MAP$loss_type_display,
             multiple = TRUE,
             options = list(`actions-box` = TRUE)
+          ),
+          height = 90
+        ),
+        box(
+          shinyWidgets::radioGroupButtons(
+            inputId = "free_y_axis_selection",
+            label = "Y-Axis Behaviour", 
+            choices = c("Free", "Fixed"),
+            status = "primary"
           ),
           height = 90
         ),

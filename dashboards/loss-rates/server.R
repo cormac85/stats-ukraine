@@ -22,15 +22,21 @@ server <- function(input, output, session) {
   })
   
   # All Loss Summary Plot
-  selected_loss_types <- reactive({input$loss_type_input})
-
+  selected_loss_types <- reactive({
+    purrr::map_chr(input$loss_type_input, look_up_loss_type_for_back_end)
+  })
+  
+  free_y_axis <- reactive({
+    input$free_y_axis_selection
+  })
+  
   output$all_loss_types_moving_average_plot <- shiny::renderPlot({
     MOD_LOSSES_DF |> 
       enrich_daily_losses() |> 
       reshape_moving_averages() |> 
       filter(loss_type %in% selected_loss_types()) |> 
       map_loss_types_for_display() |> 
-      plot_all_loss_moving_average(window_len = 7)
+      plot_all_loss_moving_average(window_len = 7, y_axis_scale = free_y_axis())
   })
   
   
