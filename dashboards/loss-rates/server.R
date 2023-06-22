@@ -9,6 +9,7 @@ server <- function(input, output, session) {
     OVERVIEW_LOSSES_DF |> 
       filter(reverse_week_start_date == max(reverse_week_start_date)) |> 
       select(-reverse_week_start_date, -date) |> 
+      map_loss_types_for_display() |> 
       janitor::clean_names(case = "title") |> 
       add_styling_to_weekly_losses() |> 
       create_downloadable_table()
