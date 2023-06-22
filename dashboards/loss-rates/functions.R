@@ -234,26 +234,9 @@ daily_moving_average_loss_plot <- function(
 
 
 daily_moving_average_personnel_plot <- function(df) {
-  
-  rate_plot <- 
-    df |> 
-      select(
-        date, personnel_diff, personnel_diff_30_day_moving_average, week_start_date
-      ) |> 
-      tidyr::drop_na() |> 
-      ggplot(aes(date, personnel_diff)) +
-      geom_col(width=1,
-               fill = ukraine_palette$ukraine_blue, alpha = 0.15) +
-      geom_line(aes(date, personnel_diff_30_day_moving_average, group = 1),
-                colour = ukraine_palette$ukraine_yellow_darkened,
-                linewidth = 0.9) +
-      ukraine_plot_theme() +
-      theme(plot.title = element_text(size = 15)) +
-      labs(title = "Daily Liquidated Personnel & 30 Day Moving Average",
-           x = "Date",
-           y = "Liquidated Personnel")
-    
-  plotly::ggplotly(rate_plot)
+  daily_moving_average_loss_plot(
+    df, loss_type_str = "personnel", moving_average_length = 30
+  )
 }
 
 

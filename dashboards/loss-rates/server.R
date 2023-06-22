@@ -51,7 +51,10 @@ server <- function(input, output, session) {
         input$personnel_date_range[1],
         input$personnel_date_range[2]
       )
-    )
+    ) |> 
+      select(
+        c("date", "day", "personnel","personnel_diff")
+      )
   })
   
   output$personnel_plot <- plotly::renderPlotly({
