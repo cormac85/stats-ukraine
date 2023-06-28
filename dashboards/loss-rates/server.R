@@ -89,7 +89,7 @@ server <- function(input, output, session) {
         )
       ) |> 
       select(
-        c("date", "day", current_loss_type, paste0(current_loss_type, "_diff"))
+        all_of(c("date", "day", current_loss_type, paste0(current_loss_type, "_diff")))
       )
   })
   
