@@ -112,6 +112,17 @@ body <- dashboardBody(
     ),
     
     tabItem(
+      tabName="oryx",
+      fluidRow(
+        box(
+          DT::dataTableOutput('oryx_table'), 
+          width = 12, 
+          height = SUMMARY_PAGE_BOX_HEIGHT + 23
+        )
+      )
+    ),
+    
+    tabItem(
       tabName = "raw",
       fluidRow(
         box(
@@ -125,7 +136,7 @@ body <- dashboardBody(
       tabName = "sources",
       fluidRow(
         box(
-          title="Ukraine Ministry of Defense Data",
+          title="Ukraine Ministry of Defense & Oryx Data",
           tags$div(
             actionButton(
               "mod_data_link", 

@@ -107,6 +107,17 @@ server <- function(input, output, session) {
       )
   })
   
+  ########
+  # Oryx #
+  ########
+
+  output$oryx_table <- DT::renderDataTable(
+    ORYX_MOD_COMPARISON_DF |>
+      janitor::clean_names(case = "title") |> 
+      create_downloadable_table()
+  )
+  
+  
   ############
   # Raw Data #
   ############
