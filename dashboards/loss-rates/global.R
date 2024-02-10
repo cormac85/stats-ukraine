@@ -2,7 +2,8 @@
 set.seed(122)
 
 # Paths
-DASHBOARD_PATH = file.path("dashboards", "loss-rates")
+config_paths  = config::get("paths")
+DASHBOARD_PATH = config_paths$dashboard_path
 DATA_PATH = file.path(DASHBOARD_PATH, "data")
 SIDEBAR_STYLE_FILE_PATH = file.path("www", "sidebar_style.css")
 HEADER_STYLE_FILE_PATH = file.path("www", "header_style.css")
@@ -14,7 +15,7 @@ TOTAL_LOSS_COL_NAME = "total_losses"
 
 # Source
 source(file.path(here::here(), DASHBOARD_PATH, "functions.R"))
-source(file.path(here::here(), "theme.R"))
+source(file.path(here::here(), DASHBOARD_PATH, "theme.R"))
 
 # CSS
 LOGO_WIDTH_PX = 250

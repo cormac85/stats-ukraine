@@ -1,0 +1,12 @@
+default:
+  paths:
+    dashboard_path: 'dashboards/loss-rates'
+
+local:
+  paths:
+    dashboard_path: 'dashboards/loss-rates'
+    
+shinyapps:
+  paths:
+    dashboard_path: ''
+    
