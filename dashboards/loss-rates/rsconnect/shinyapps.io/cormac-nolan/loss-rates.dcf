@@ -5,7 +5,7 @@ account: cormac-nolan
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11191849
-bundleId: 8241855
+bundleId: 8242060
 url: https://cormac-nolan.shinyapps.io/loss-rates/
 version: 1
 asMultiple: FALSE

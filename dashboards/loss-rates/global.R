@@ -89,6 +89,7 @@ LOSS_TYPE_MAP <- dplyr::tribble(
   "special_equipment",       "Special Equipment",
   "tank",                    "Tanks",
   "vehicles_and_fuel_tanks", "Trucks & Fuel Tanks",
+  "submarines",               "Submarines"
 )
 
 ORYX_LOSS_TYPE_MAP <- dplyr::tibble(
