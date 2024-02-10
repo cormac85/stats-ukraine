@@ -21,6 +21,7 @@ body <- dashboardBody(
             inputId = "loss_type_input",
             label = "Select Loss Type",
             choices = LOSS_TYPE_MAP$loss_type_display,
+            selected = LOSS_TYPE_MAP$loss_type_display[6],
             multiple = TRUE,
             options = list(`actions-box` = TRUE)
           ),

@@ -269,7 +269,6 @@ plot_all_loss_moving_average <- function(df, window_len, y_axis_scale) {
         window_len, 
         "-Day Moving Average of\nDaily Russian Losses"
       ),
-      subtitle = "Note: y-axis scale is different between sub-plots",
       x = "Date",
       y = "Loss Count"
     ) +
