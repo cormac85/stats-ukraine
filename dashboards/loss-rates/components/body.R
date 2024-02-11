@@ -116,6 +116,12 @@ body <- dashboardBody(
       tabName="oryx",
       fluidRow(
         box(
+          shiny::h3("Note"),
+          shiny::p("The Oryx data used in this page was last updated on 5th Feb 2023."),
+        )
+      ),
+      fluidRow(
+        box(
           DT::dataTableOutput('oryx_table'), 
           width = 12, 
           height = SUMMARY_PAGE_BOX_HEIGHT + 23
